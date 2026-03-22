@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 
-const CHARS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン{}[]<>=/\\|;:+-*&^%$#@!~';
+// Katakana + números + símbolos — igual que la peli
+const CHARS = 'ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789Z';
 
-export default function MatrixRain({ opacity = 0.06 }) {
+export default function MatrixRain({ opacity = 1 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -12,70 +13,73 @@ export default function MatrixRain({ opacity = 0.06 }) {
     const ctx = canvas.getContext('2d');
     let animId;
     let lastTime = 0;
-    const FPS = 20; // frames per second — slower = more cinematic
-    const INTERVAL = 1000 / FPS;
+    const INTERVAL = 50; // ~20fps — velocidad cinematic
+
+    const fontSize = 15;
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      // Limpiar al redimensionar
+      ctx.fillStyle = '#0d1117';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const fontSize = 16;
     let columns = Math.floor(canvas.width / fontSize);
 
-    // Each column has its own speed multiplier and trail length
-    let drops = Array(columns).fill(0).map(() => Math.random() * -80);
-    let speeds = Array(columns).fill(0).map(() => 0.5 + Math.random() * 1.5);
-    let chars = Array(columns).fill('').map(() => CHARS[Math.floor(Math.random() * CHARS.length)]);
+    // Estado por columna
+    let drops   = Array.from({ length: columns }, () => Math.random() * -(canvas.height / fontSize));
+    let speeds  = Array.from({ length: columns }, () => 0.4 + Math.random() * 1.2);
+    let lengths = Array.from({ length: columns }, () => 10 + Math.floor(Math.random() * 20)); // longitud del stream
+
+    const randomChar = () => CHARS[Math.floor(Math.random() * CHARS.length)];
 
     const draw = (timestamp) => {
       animId = requestAnimationFrame(draw);
       if (timestamp - lastTime < INTERVAL) return;
       lastTime = timestamp;
 
-      // Slow fade — lower alpha = longer, more visible trails
-      ctx.fillStyle = 'rgba(13, 17, 23, 0.04)';
+      // Overlay semitransparente — crea el efecto de cola que se desvanece
+      ctx.fillStyle = 'rgba(13, 17, 23, 0.06)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.font = `${fontSize}px "Courier New", monospace`;
 
-      // Sync column count with canvas width
+      // Sincronizar columnas si cambia el ancho
       const newCols = Math.floor(canvas.width / fontSize);
-      if (newCols > columns) {
-        for (let i = columns; i < newCols; i++) {
-          drops.push(Math.random() * -80);
-          speeds.push(0.5 + Math.random() * 1.5);
-          chars.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
-        }
+      while (drops.length < newCols) {
+        drops.push(Math.random() * -(canvas.height / fontSize));
+        speeds.push(0.4 + Math.random() * 1.2);
+        lengths.push(10 + Math.floor(Math.random() * 20));
       }
       columns = newCols;
 
       for (let i = 0; i < columns; i++) {
         const x = i * fontSize;
-        const y = drops[i] * fontSize;
+        const headY = drops[i] * fontSize;
 
-        // Randomly update the character in this column
-        if (Math.random() > 0.85) {
-          chars[i] = CHARS[Math.floor(Math.random() * CHARS.length)];
-        }
+        // ── Carácter cabeza: BLANCO brillante
+        ctx.fillStyle = '#e8ffe8';
+        ctx.fillText(randomChar(), x, headY);
 
-        // Head character: bright white-green (cinematic Matrix look)
-        ctx.fillStyle = `rgba(220, 255, 220, ${Math.min(1, opacity * 10)})`;
-        ctx.fillText(chars[i], x, y);
+        // ── Segundo carácter: verde claro
+        ctx.fillStyle = '#7fff7f';
+        ctx.fillText(randomChar(), x, headY - fontSize);
 
-        // Second character: slightly dimmer green
-        if (drops[i] > 1) {
-          const char2 = CHARS[Math.floor(Math.random() * CHARS.length)];
-          ctx.fillStyle = `rgba(57, 211, 83, ${opacity * 5})`;
-          ctx.fillText(char2, x, y - fontSize);
-        }
+        // ── Cola: verde medio
+        ctx.fillStyle = '#39d353';
+        ctx.fillText(randomChar(), x, headY - fontSize * 2);
 
-        // Reset column when it goes off screen
-        if (y > canvas.height && Math.random() > 0.97) {
-          drops[i] = -Math.random() * 20;
-          speeds[i] = 0.5 + Math.random() * 1.5;
+        // ── Trail final: verde oscuro (ya se dibujó antes via fade)
+        // El overlay semitransparente hace fade automáticamente
+
+        // Resetear cuando sale de pantalla
+        if (headY > canvas.height + lengths[i] * fontSize) {
+          drops[i] = Math.random() * -30;
+          speeds[i] = 0.4 + Math.random() * 1.2;
+          lengths[i] = 10 + Math.floor(Math.random() * 20);
         }
 
         drops[i] += speeds[i];
@@ -88,13 +92,13 @@ export default function MatrixRain({ opacity = 0.06 }) {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', resize);
     };
-  }, [opacity]);
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 1 }}
+      style={{ opacity }}
     />
   );
 }
