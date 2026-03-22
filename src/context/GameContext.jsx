@@ -79,8 +79,11 @@ function reducer(state, action) {
     }
     case 'SET_USERNAME':
       return { ...state, username: action.payload };
-    case 'CHEAT_UNLOCK':
-      return { ...state, cheatsUnlocked: true };
+    case 'CHEAT_UNLOCK': {
+      const allLevels = chapters.flatMap(c => c.levels.map(l => `${c.id}/${l.id}`));
+      const newCompleted = [...new Set([...state.completedLevels, ...allLevels])];
+      return { ...state, cheatsUnlocked: true, completedLevels: newCompleted };
+    }
     case 'RESET':
       return initialState;
     default:

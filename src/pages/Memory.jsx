@@ -1360,10 +1360,35 @@ export default function Memory() {
             </div>
           </div>
 
-          {/* Lenguaje actual */}
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs text-terminal-muted uppercase tracking-wider">Lenguaje</span>
-            <span className="px-3 py-1 bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-bold rounded-full">🐍 Python</span>
+          {/* Selector de lenguaje */}
+          <div className="mb-6">
+            <p className="text-xs text-terminal-muted uppercase tracking-wider mb-2">Lenguaje</p>
+            <div className="flex gap-2 flex-wrap">
+              {/* Python — activo */}
+              <div className="flex items-center gap-2 px-4 py-2 bg-neon-green/15 border-2 border-neon-green rounded-lg cursor-default">
+                <span className="text-lg">🐍</span>
+                <div>
+                  <div className="text-xs font-bold text-neon-green">Python</div>
+                  <div className="text-xs text-neon-green/60">{totalCompleted}/{totalLevels} memorias</div>
+                </div>
+              </div>
+              {/* JavaScript — próximamente */}
+              <div className="flex items-center gap-2 px-4 py-2 bg-terminal-surface border border-terminal-border/40 rounded-lg opacity-40 cursor-not-allowed">
+                <span className="text-lg grayscale">🟨</span>
+                <div>
+                  <div className="text-xs font-bold text-terminal-muted">JavaScript</div>
+                  <div className="text-xs text-terminal-muted/60">Próximamente</div>
+                </div>
+              </div>
+              {/* Rust — próximamente */}
+              <div className="flex items-center gap-2 px-4 py-2 bg-terminal-surface border border-terminal-border/40 rounded-lg opacity-40 cursor-not-allowed">
+                <span className="text-lg grayscale">🦀</span>
+                <div>
+                  <div className="text-xs font-bold text-terminal-muted">Rust</div>
+                  <div className="text-xs text-terminal-muted/60">Próximamente</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Grid de capítulos */}
