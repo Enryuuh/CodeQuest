@@ -631,6 +631,541 @@ Patrón de análisis:
       { code: 'datos = [88, 45, 92, 67, 95]\nok = warn = crit = 0\nfor d in datos:\n    if d > 90: crit += 1\n    elif d > 70: warn += 1\n    else: ok += 1\nprint(f"OK:{ok} WARN:{warn} CRIT:{crit}")', output: 'OK:2 WARN:1 CRIT:2' },
     ],
   },
+
+  // ESTRUCTURAS
+  'estructuras/listas_crear': {
+    title: 'Listas — La estructura más usada en Python',
+    content: `Una lista es una colección ordenada y mutable. Puede contener cualquier tipo de dato.
+
+Crear listas:
+  vacia = []
+  nums = [1, 2, 3, 4, 5]
+  mixta = [1, "hola", True, 3.14]
+
+Acceso por índice (empieza en 0):
+  lista[0]   → primer elemento
+  lista[1]   → segundo elemento
+  lista[-1]  → último (contando desde atrás)
+  lista[-2]  → penúltimo
+
+Información básica:
+  len(lista)     → número de elementos
+  3 in lista     → True si 3 está en la lista
+  lista.index(x) → posición de x en la lista`,
+    examples: [
+      { code: 'planetas = ["Tierra", "Marte", "Venus"]\nprint(planetas[0])\nprint(planetas[-1])\nprint(len(planetas))', output: 'Tierra\nVenus\n3' },
+      { code: 'nums = [10, 20, 30, 40, 50]\nprint(30 in nums)\nprint(nums.index(40))', output: 'True\n3' },
+    ],
+  },
+  'estructuras/listas_metodos': {
+    title: 'Métodos de listas — Modificar colecciones',
+    content: `Las listas son mutables: puedes modificarlas después de crearlas.
+
+Agregar elementos:
+  lista.append(x)     → agrega x al final
+  lista.insert(i, x)  → inserta x en posición i
+
+Eliminar elementos:
+  lista.remove(x)  → elimina la primera aparición de x
+  lista.pop()      → elimina y retorna el último
+  lista.pop(i)     → elimina y retorna el elemento en posición i
+
+Ordenar y reorganizar:
+  lista.sort()      → ordena de menor a mayor (modifica la lista)
+  lista.reverse()   → invierte el orden (modifica la lista)
+  sorted(lista)     → retorna nueva lista ordenada (no modifica)
+
+Otros:
+  lista.count(x)  → cuántas veces aparece x
+  lista.clear()   → vacía la lista`,
+    examples: [
+      { code: 'equipo = ["radar", "motor"]\nequipo.append("laser")\nequipo.insert(0, "escudo")\nprint(equipo)', output: "['escudo', 'radar', 'motor', 'laser']" },
+      { code: 'nums = [3, 1, 4, 1, 5, 9]\nnums.sort()\nprint(nums)\nprint(nums.count(1))', output: '[1, 1, 3, 4, 5, 9]\n2' },
+    ],
+  },
+  'estructuras/listas_slicing': {
+    title: 'Slicing — Extraer porciones de datos',
+    content: `Slicing es una de las características más poderosas de Python. Funciona con listas y strings.
+
+Sintaxis: secuencia[inicio:fin:paso]
+
+• inicio: índice donde empieza (incluido). Default: 0
+• fin: índice donde termina (excluido). Default: final
+• paso: salto entre elementos. Default: 1
+
+Ejemplos clave:
+  lista[1:4]   → del índice 1 al 3
+  lista[:3]    → del inicio al 2
+  lista[2:]    → del 2 hasta el final
+  lista[::2]   → uno sí, uno no (paso 2)
+  lista[::-1]  → invertida (paso -1)
+  lista[-3:]   → los 3 últimos
+
+El original NO se modifica. Slicing crea una copia.`,
+    examples: [
+      { code: 'datos = [10, 20, 30, 40, 50, 60, 70]\nprint(datos[2:5])\nprint(datos[:3])\nprint(datos[-3:])\nprint(datos[::2])', output: '[30, 40, 50]\n[10, 20, 30]\n[50, 60, 70]\n[10, 30, 50, 70]' },
+      { code: 'codigo = "PYTHON3"\nprint(codigo[::-1])\nprint(codigo[::2])', output: '3NOHTYP\nPTO3' },
+    ],
+  },
+  'estructuras/listas_funciones': {
+    title: 'Funciones integradas con listas',
+    content: `Python incluye funciones muy útiles que trabajan directamente con listas.
+
+Estadísticas básicas:
+  max(lista)    → el valor más alto
+  min(lista)    → el valor más bajo
+  sum(lista)    → suma de todos los elementos
+  len(lista)    → cantidad de elementos
+
+Transformación:
+  sorted(lista)           → nueva lista ordenada (ascendente)
+  sorted(lista, reverse=True) → descendente
+  list(range(n))          → lista de números
+
+Promedio (no viene incluido, debes calcularlo):
+  promedio = sum(lista) / len(lista)
+
+Truco de min/max con strings: comparan alfabéticamente.
+  max(["b", "a", "c"]) → "c"`,
+    examples: [
+      { code: 'notas = [85, 92, 78, 95, 88]\nprint(f"Max: {max(notas)}")\nprint(f"Min: {min(notas)}")\nprint(f"Promedio: {sum(notas) / len(notas):.1f}")', output: 'Max: 95\nMin: 78\nPromedio: 87.6' },
+      { code: 'nombres = ["Carlos", "Ana", "Zoe", "Bruno"]\nprint(sorted(nombres))', output: "['Ana', 'Bruno', 'Carlos', 'Zoe']" },
+    ],
+  },
+  'estructuras/diccionarios_crear': {
+    title: 'Diccionarios — Datos con etiquetas',
+    content: `Un diccionario asocia claves únicas con valores. Perfectos para datos estructurados.
+
+Crear un diccionario:
+  dicc = {}                          # vacío
+  persona = {"nombre": "EVA", "edad": 5, "activo": True}
+
+Acceder a valores:
+  persona["nombre"]       → "EVA"
+  persona.get("edad")     → 5
+  persona.get("x", 0)     → 0 (valor por defecto si no existe)
+
+Modificar:
+  persona["edad"] = 6     → actualiza
+  persona["rol"] = "IA"   → agrega nueva clave
+
+Verificar existencia:
+  "nombre" in persona     → True
+  "peso" in persona       → False
+
+len(dicc) → número de claves`,
+    examples: [
+      { code: 'config = {"host": "localhost", "puerto": 8080, "debug": True}\nprint(config["host"])\nprint(config.get("timeout", 30))', output: 'localhost\n30' },
+      { code: 'inv = {}\ninv["espada"] = 50\ninv["escudo"] = 1\nprint(inv)', output: "{'espada': 50, 'escudo': 1}" },
+    ],
+  },
+  'estructuras/diccionarios_metodos': {
+    title: 'Métodos de diccionarios — Recorrer y extraer datos',
+    content: `Los diccionarios tienen métodos especializados para trabajar con claves y valores.
+
+Los tres métodos principales de iteración:
+  dicc.keys()    → todas las claves
+  dicc.values()  → todos los valores
+  dicc.items()   → pares (clave, valor) — el más usado
+
+Otros métodos útiles:
+  dicc.get(clave, default)  → valor o default si no existe
+  dicc.update(otro_dicc)    → fusiona dos diccionarios
+  dicc.pop(clave)           → elimina y retorna el valor
+
+Recorrer con items():
+  for clave, valor in dicc.items():
+      print(f"{clave}: {valor}")
+
+Crear diccionario desde listas (zip):
+  claves = ["a", "b", "c"]
+  valores = [1, 2, 3]
+  dicc = dict(zip(claves, valores))`,
+    examples: [
+      { code: 'stats = {"hp": 100, "mp": 50, "atk": 25}\nfor stat, val in stats.items():\n    print(f"  {stat.upper()}: {val}")', output: '  HP: 100\n  MP: 50\n  ATK: 25' },
+      { code: 'precios = {"manzana": 1.5, "pera": 2.0, "uva": 3.0}\ntotal = sum(precios.values())\nprint(f"Total: {total}")', output: 'Total: 6.5' },
+    ],
+  },
+  'estructuras/strings_metodos': {
+    title: 'Métodos de strings — Superpoderes del texto',
+    content: `Los strings tienen docenas de métodos incorporados. Los más importantes:
+
+Transformación de caso:
+  .upper()      → "HOLA"
+  .lower()      → "hola"
+  .title()      → "Hola Mundo"
+  .capitalize() → "Hola mundo"
+
+Limpieza:
+  .strip()       → quita espacios al inicio y final
+  .lstrip()      → solo al inicio (left)
+  .rstrip()      → solo al final (right)
+
+Búsqueda y reemplazo:
+  .replace(viejo, nuevo)  → reemplaza ocurrencias
+  .count(sub)             → cuenta apariciones
+  .find(sub)              → índice o -1 si no existe
+  .startswith(sub)        → True/False
+  .endswith(sub)          → True/False
+
+División y unión:
+  .split(sep)           → divide en lista
+  sep.join(lista)       → une lista en string`,
+    examples: [
+      { code: 'log = "  ERROR: fallo_critico  "\nprint(log.strip())\nprint(log.strip().replace("_", " ").title())', output: 'ERROR: fallo_critico\nError: Fallo Critico' },
+      { code: 'csv = "a,b,c,d"\npartes = csv.split(",")\nprint(partes)\nprint(" | ".join(partes))', output: "['a', 'b', 'c', 'd']\na | b | c | d" },
+    ],
+  },
+  'estructuras/tuplas': {
+    title: 'Tuplas — Datos que no deben cambiar',
+    content: `Una tupla es como una lista, pero inmutable. Una vez creada, no se puede modificar.
+
+Sintaxis con paréntesis:
+  punto = (10, 25)
+  rgb = (255, 128, 0)
+  vacia = ()
+  un_elem = (42,)   # coma necesaria para tupla de un elemento
+
+¿Por qué usar tuplas?
+• Datos que no deben cambiar (coordenadas, configuraciones)
+• Más rápidas que las listas en lectura
+• Se usan como claves de diccionarios (las listas no pueden)
+• Retornar múltiples valores de funciones
+
+Desempaquetado de tuplas:
+  x, y = (10, 25)    # x=10, y=25
+  a, b, c = (1, 2, 3)
+
+Las tuplas soportan: indexado, slicing, len(), in, iteración.
+No soportan: append, remove, sort, ni ninguna modificación.`,
+    examples: [
+      { code: 'coordenadas = (40.7128, -74.0060)\nlat, lon = coordenadas\nprint(f"Lat: {lat}, Lon: {lon}")', output: 'Lat: 40.7128, Lon: -74.006' },
+      { code: 'colores = ("rojo", "verde", "azul")\nfor i, color in enumerate(colores):\n    print(f"{i}: {color}")', output: '0: rojo\n1: verde\n2: azul' },
+    ],
+  },
+  'estructuras/listas_diccionarios': {
+    title: 'Estructuras anidadas — Modelar datos del mundo real',
+    content: `Combinar listas y diccionarios permite modelar cualquier dato complejo.
+
+Lista de diccionarios (la más común):
+  usuarios = [
+      {"nombre": "Ana", "edad": 25, "activo": True},
+      {"nombre": "Luis", "edad": 30, "activo": False}
+  ]
+  usuarios[0]["nombre"]  → "Ana"
+
+Diccionario de listas:
+  inventario = {
+      "armas": ["espada", "arco"],
+      "pociones": ["vida", "mana", "vida"]
+  }
+  inventario["armas"][0]  → "espada"
+
+Patrón de filtrado de estructuras complejas:
+  activos = [u for u in usuarios if u["activo"]]
+
+Patrón de búsqueda:
+  for u in usuarios:
+      if u["nombre"] == "Ana":
+          print(u["edad"])`,
+    examples: [
+      { code: 'flota = [\n    {"nave": "X-Wing", "clase": "caza", "hp": 100},\n    {"nave": "Halcon", "clase": "fragata", "hp": 250}\n]\nfor nave in flota:\n    print(f"{nave[\'nave\']}: {nave[\'hp\']} HP")', output: 'X-Wing: 100 HP\nHalcon: 250 HP' },
+    ],
+  },
+  'estructuras/proyecto_inventario': {
+    title: 'Proyecto: Procesador de datos completo',
+    content: `Este proyecto integra todas las estructuras de datos en un sistema real.
+
+Patrón de conteo con diccionario:
+  conteo = {}
+  for item in lista:
+      if item in conteo:
+          conteo[item] += 1
+      else:
+          conteo[item] = 1
+
+Patrón alternativo con .get():
+  for item in lista:
+      conteo[item] = conteo.get(item, 0) + 1
+
+En el mundo real este patrón se usa para:
+• Contar palabras en un texto
+• Analizar frecuencias de eventos
+• Agrupar datos por categoría
+• Construir histogramas
+
+La clave es: inicializar → iterar → condicional → acumular → resultado.`,
+    examples: [
+      { code: 'items = ["metal", "cristal", "metal", "energia", "metal"]\nconteo = {}\nfor item in items:\n    conteo[item] = conteo.get(item, 0) + 1\nprint(conteo)', output: "{'metal': 3, 'cristal': 1, 'energia': 1}" },
+    ],
+  },
+
+  // FUNCIONES
+  'funciones/def_basico': {
+    title: 'def — Crear bloques de código reutilizables',
+    content: `Una función es un bloque de código con nombre que puedes ejecutar cuantas veces quieras.
+
+Sintaxis:
+  def nombre_funcion():
+      # código de la función
+      # indentado 4 espacios
+
+Llamar (ejecutar) una función:
+  nombre_funcion()
+
+¿Por qué usar funciones?
+• DRY: Don't Repeat Yourself — escribe el código una vez, úsalo muchas
+• Organización: divide el programa en partes manejables
+• Legibilidad: el nombre de la función describe qué hace
+• Mantenimiento: cambias la función una vez, cambia en todos lados
+
+Convención de nombres: snake_case, verbos descriptivos.
+  calcular_area()  ✓
+  f1()             ✗ (poco descriptivo)`,
+    examples: [
+      { code: 'def separador():\n    print("=" * 30)\n\ndef mostrar_titulo(texto):\n    separador()\n    print(f"  {texto}")\n    separador()\n\nmostrar_titulo("Sistema CORE v2.1")', output: '==============================\n  Sistema CORE v2.1\n==============================' },
+    ],
+  },
+  'funciones/parametros': {
+    title: 'Parámetros — Datos de entrada para funciones',
+    content: `Los parámetros permiten que una función reciba datos y opere sobre ellos.
+
+Parámetro vs Argumento:
+  • Parámetro: la variable en la definición (def f(x))
+  • Argumento: el valor que pasas al llamar (f(10))
+
+Múltiples parámetros (separados por coma):
+  def area(base, altura):
+      return base * altura
+
+Orden importa:
+  def presentar(nombre, rol, nivel):
+      ...
+  presentar("EVA", "IA", 10)  # posicional
+
+Argumentos nombrados (keyword arguments):
+  presentar(rol="IA", nombre="EVA", nivel=10)  # cualquier orden
+
+Puedes mezclar, pero posicionales deben ir primero:
+  presentar("EVA", nivel=10, rol="IA")`,
+    examples: [
+      { code: 'def bienvenida(nombre, sistema="CORE"):\n    print(f"Bienvenido, {nombre}. Sistema: {sistema}")\n\nbienvenida("Recluta")\nbienvenida("EVA", "NEXUS")', output: 'Bienvenido, Recluta. Sistema: CORE\nBienvenido, EVA. Sistema: NEXUS' },
+    ],
+  },
+  'funciones/return_valor': {
+    title: 'return — La función te da una respuesta',
+    content: `return envía un valor de vuelta al código que llamó a la función.
+
+Diferencia fundamental:
+  def con_print(n):
+      print(n * 2)    # muestra, pero no devuelve nada útil
+
+  def con_return(n):
+      return n * 2    # devuelve el resultado para usar
+
+Con return puedes:
+  resultado = con_return(5)   # guardar en variable
+  print(con_return(5))        # imprimir directamente
+  if con_return(5) > 8:       # usar en condición
+  lista.append(con_return(5)) # agregar a colección
+
+Una función sin return (o con return vacío) retorna None.
+
+return termina la función inmediatamente:
+  def positivo(n):
+      if n < 0:
+          return 0      # termina aquí si n es negativo
+      return n          # solo llega aquí si n >= 0`,
+    examples: [
+      { code: 'def potencia(base, exp):\n    return base ** exp\n\ndef formatear_resultado(val):\n    return f"Resultado: {val}"\n\nprint(formatear_resultado(potencia(2, 8)))', output: 'Resultado: 256' },
+    ],
+  },
+  'funciones/params_default': {
+    title: 'Parámetros con valor por defecto',
+    content: `Los valores por defecto hacen que los parámetros sean opcionales.
+
+Sintaxis: def f(param=valor_default):
+
+Regla: los parámetros con default van SIEMPRE al final.
+  def f(a, b=10, c=20):  ✓
+  def f(a=10, b):         ✗ Error de sintaxis
+
+Cuándo usar valores por defecto:
+• Configuraciones opcionales
+• Comportamiento estándar con opción de personalizar
+• API ergonómica (fácil de usar para el caso más común)
+
+Cuidado con mutables como default (bug clásico de Python):
+  def agregar(item, lista=[]):  # ¡MAL! La lista persiste entre llamadas
+  def agregar(item, lista=None):  # BIEN
+      if lista is None:
+          lista = []`,
+    examples: [
+      { code: 'def conectar(host, puerto=80, seguro=False):\n    protocolo = "https" if seguro else "http"\n    return f"{protocolo}://{host}:{puerto}"\n\nprint(conectar("core.io"))\nprint(conectar("core.io", 443, True))', output: 'http://core.io:80\nhttps://core.io:443' },
+    ],
+  },
+  'funciones/return_multiple': {
+    title: 'Retornos múltiples — Una función, varios resultados',
+    content: `Python permite retornar múltiples valores separados por coma. Se empaquetan en una tupla.
+
+Sintaxis:
+  def f():
+      return valor1, valor2, valor3
+
+Formas de recibirlo:
+  # Desempaquetado (lo más común):
+  a, b, c = f()
+
+  # Como tupla:
+  resultado = f()
+  resultado[0]   # primer valor
+
+  # Ignorar valores con _:
+  a, _, c = f()  # ignora el segundo valor
+
+Cuándo usar retornos múltiples:
+• Estadísticas: min, max, promedio
+• Coordenadas: x, y, z
+• Estado + mensaje: éxito, mensaje_error
+• División: cociente, resto`,
+    examples: [
+      { code: 'def analizar_lista(nums):\n    return min(nums), max(nums), sum(nums) / len(nums)\n\nmi, ma, prom = analizar_lista([10, 25, 5, 40, 20])\nprint(f"Min: {mi}, Max: {ma}, Prom: {prom}")', output: 'Min: 5, Max: 40, Prom: 20.0' },
+    ],
+  },
+  'funciones/scope': {
+    title: 'Scope — El ámbito de vida de una variable',
+    content: `El scope determina desde dónde puedes acceder a una variable.
+
+Variable local:
+  • Creada dentro de una función
+  • Solo existe mientras la función ejecuta
+  • No es accesible desde afuera
+
+  def f():
+      local = 10  # solo existe aquí
+  print(local)    # ¡Error! no existe aquí
+
+Variable global:
+  • Creada fuera de toda función
+  • Accesible desde cualquier parte del programa (solo lectura)
+  • Para modificarla dentro de una función: declarar global
+
+Jerarquía de búsqueda (LEGB):
+  Local → Enclosing → Global → Built-in
+
+Buena práctica: evita modificar variables globales dentro de funciones. Pasa los datos como parámetros y usa return.`,
+    examples: [
+      { code: 'VERSION = "2.1"  # global\n\ndef mostrar_info(nombre):\n    estado = "online"  # local\n    print(f"{nombre} v{VERSION} - {estado}")\n\nmostrar_info("CORE")\nprint(VERSION)  # global accesible', output: 'CORE v2.1 - online\n2.1' },
+    ],
+  },
+  'funciones/funciones_listas': {
+    title: 'Funciones que procesan listas',
+    content: `Las funciones son ideales para encapsular operaciones sobre listas.
+
+Patrón más común — filtrar y transformar:
+  def filtrar(lista, condicion):
+      resultado = []
+      for item in lista:
+          if condicion(item):
+              resultado.append(item)
+      return resultado
+
+Patrón de transformación:
+  def transformar(lista):
+      return [operacion(x) for x in lista]
+
+Principio importante: las funciones NO deben modificar la lista original sin avisar. Crea una nueva lista y retórnala.
+
+Funciones útiles del módulo:
+  max(lista)    → máximo
+  min(lista)    → mínimo
+  sum(lista)    → suma
+  sorted(lista) → nueva lista ordenada`,
+    examples: [
+      { code: 'def duplicar(lista):\n    resultado = []\n    for x in lista:\n        resultado.append(x * 2)\n    return resultado\n\ndef solo_pares(lista):\n    resultado = []\n    for x in lista:\n        if x % 2 == 0:\n            resultado.append(x)\n    return resultado\n\nnums = [1, 2, 3, 4, 5]\nprint(duplicar(nums))\nprint(solo_pares(nums))', output: '[2, 4, 6, 8, 10]\n[2, 4]' },
+    ],
+  },
+  'funciones/funciones_diccionarios': {
+    title: 'Funciones que crean y procesan diccionarios',
+    content: `Las funciones son perfectas para construir y analizar diccionarios de forma controlada.
+
+Funciones que crean diccionarios (fábricas):
+  def crear_usuario(nombre, nivel, xp=0):
+      return {
+          "nombre": nombre,
+          "nivel": nivel,
+          "xp": xp,
+          "rango": "elite" if nivel > 5 else "normal"
+      }
+
+Funciones que analizan diccionarios:
+  def total_recursos(inventario):
+      return sum(inventario.values())
+
+Funciones que transforman diccionarios:
+  def subir_nivel(usuario):
+      nuevo = dict(usuario)  # copia
+      nuevo["nivel"] += 1
+      return nuevo
+
+Siempre es mejor retornar un diccionario nuevo que modificar el original directamente.`,
+    examples: [
+      { code: 'def crear_agente(nombre, puntos):\n    return {\n        "nombre": nombre,\n        "puntos": puntos,\n        "rango": "elite" if puntos >= 100 else "normal"\n    }\n\nagente = crear_agente("Zero", 150)\nfor k, v in agente.items():\n    print(f"  {k}: {v}")', output: '  nombre: Zero\n  puntos: 150\n  rango: elite' },
+    ],
+  },
+  'funciones/funciones_composicion': {
+    title: 'Composición de funciones — El poder de combinar',
+    content: `La composición es usar el resultado de una función como entrada de otra.
+
+Composición directa:
+  resultado = f(g(h(x)))
+  # h se ejecuta primero, luego g, luego f
+
+Composición con pasos intermedios (más legible):
+  paso1 = limpiar(datos)
+  paso2 = validar(paso1)
+  resultado = formatear(paso2)
+
+Ventajas:
+• Cada función hace UNA cosa bien (principio de responsabilidad única)
+• Fácil de testear cada parte
+• Reutilizable en diferentes contextos
+• Más fácil de leer y entender
+
+Este es el fundamento de la programación funcional y del diseño de software limpio.`,
+    examples: [
+      { code: 'def limpiar(texto):\n    return texto.strip().lower()\n\ndef capitalizar(texto):\n    return texto.replace("_", " ").title()\n\ndef formatear_nombre(raw):\n    return capitalizar(limpiar(raw))\n\nprint(formatear_nombre("  juan_perez  "))', output: 'Juan Perez' },
+    ],
+  },
+  'funciones/proyecto_final': {
+    title: 'Proyecto Final — Todo el conocimiento integrado',
+    content: `Este es el patrón de un programa Python completo y bien estructurado.
+
+Arquitectura de un buen programa:
+  1. Funciones de datos → crean/transforman datos
+  2. Funciones de lógica → procesan y calculan
+  3. Funciones de presentación → muestran resultados
+  4. Función principal → orquesta todo
+
+Ejemplo de estructura:
+  def cargar_datos():     # obtiene datos
+  def procesar(datos):    # aplica lógica
+  def mostrar(resultado): # formatea salida
+
+  datos = cargar_datos()
+  resultado = procesar(datos)
+  mostrar(resultado)
+
+Con todo lo que aprendiste puedes:
+• Variables y tipos para representar datos
+• Condicionales para tomar decisiones
+• Bucles para procesar colecciones
+• Listas y dicts para organizar información
+• Funciones para estructurar y reutilizar código`,
+    examples: [
+      { code: 'def reporte(nums):\n    positivos = sum(1 for n in nums if n > 0)\n    return {\n        "total": len(nums),\n        "suma": sum(nums),\n        "promedio": sum(nums) // len(nums),\n        "positivos": positivos\n    }\n\nresultado = reporte([10, -5, 20, -3, 15])\nfor k, v in resultado.items():\n    print(f"{k}: {v}")', output: 'total: 5\nsuma: 37\npromedio: 7\npositivos: 3' },
+    ],
+  },
 };
 
 const colorMap = {
