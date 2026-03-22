@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { GameProvider } from './context/GameContext';
 import Home from './pages/Home';
+import LanguageSelect from './pages/LanguageSelect';
 import LevelMap from './pages/LevelMap';
 import Level from './pages/Level';
 import Achievements from './pages/Achievements';
@@ -15,10 +16,14 @@ function App() {
         <HashRouter>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/mapa" element={<LevelMap />} />
-            <Route path="/nivel/:chapterId/:levelId" element={<Level />} />
+            <Route path="/lenguajes" element={<LanguageSelect />} />
+            <Route path="/mapa/:lang" element={<LevelMap />} />
+            <Route path="/nivel/:lang/:chapterId/:levelId" element={<Level />} />
             <Route path="/logros" element={<Achievements />} />
             <Route path="/memoria" element={<Memory />} />
+            {/* Backward compatibility */}
+            <Route path="/mapa" element={<LevelMap />} />
+            <Route path="/nivel/:chapterId/:levelId" element={<Level />} />
           </Routes>
         </HashRouter>
       </div>

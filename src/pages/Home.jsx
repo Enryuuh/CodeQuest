@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { chapters, getTotalLevels } from '../data/levels';
-import { Terminal, Zap, Trophy, RotateCcw, Award, User, BookOpen } from 'lucide-react';
+import { languageList, getTotalLevelsAllLanguages } from '../data/languages';
+import { Terminal, Zap, Trophy, RotateCcw, Award, User, BookOpen, Code2 } from 'lucide-react';
 import AriaAvatar from '../components/AriaAvatar';
 import { playTypewriterKey } from '../utils/sounds';
 
 export default function Home() {
   const navigate = useNavigate();
   const { xp, completedLevels, getPlayerRank, dispatch, availableXp, claimedAchievements, username, cheatsUnlocked } = useGame();
-  const totalLevels = getTotalLevels();
+  const totalLevels = getTotalLevelsAllLanguages();
   const progress = Math.round((completedLevels.length / totalLevels) * 100);
+  const chapters = languageList.flatMap(l => l.chapters);
 
   // Si no tiene username, mostrar pantalla de registro
   if (!username) {
@@ -71,14 +72,32 @@ export default function Home() {
 
       {/* Botón principal */}
       <button
-        onClick={() => navigate('/mapa')}
+        onClick={() => navigate('/lenguajes')}
         className="group relative px-8 py-4 bg-neon-green/10 border-2 border-neon-green text-neon-green rounded-lg text-lg font-bold hover:bg-neon-green/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(57,211,83,0.3)] animate-slide-up cursor-pointer"
         style={{ animationDelay: '0.2s' }}
       >
-        <span className="relative z-10">
+        <span className="relative z-10 flex items-center gap-2">
+          <Code2 className="w-5 h-5" />
           {completedLevels.length === 0 ? '[ INICIAR MISIÓN ]' : '[ CONTINUAR MISIÓN ]'}
         </span>
       </button>
+
+      {/* Language quick links */}
+      <div className="flex gap-3 mt-4 animate-slide-up" style={{ animationDelay: '0.22s' }}>
+        {languageList.map(lang => (
+          <button
+            key={lang.id}
+            onClick={() => {
+              dispatch({ type: 'SELECT_LANGUAGE', payload: lang.id });
+              navigate(`/mapa/${lang.id}`);
+            }}
+            className="px-4 py-2 bg-terminal-surface border border-terminal-border rounded-lg text-sm hover:border-neon-green/50 transition-colors cursor-pointer"
+          >
+            <span className="mr-1">{lang.icon}</span>
+            <span className="text-terminal-muted">{lang.name}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Logros */}
       <button
@@ -118,12 +137,12 @@ export default function Home() {
       )}
 
       {/* Terminal interactivo con cheat code */}
-      <CheatTerminal username={username} chapters={chapters} totalLevels={totalLevels} getPlayerRank={getPlayerRank} dispatch={dispatch} cheatsUnlocked={cheatsUnlocked} />
+      <CheatTerminal username={username} chapters={chapters} totalLevels={totalLevels} getPlayerRank={getPlayerRank} dispatch={dispatch} cheatsUnlocked={cheatsUnlocked} languages={languageList} />
     </div>
   );
 }
 
-function CheatTerminal({ username, chapters, totalLevels, getPlayerRank, dispatch, cheatsUnlocked }) {
+function CheatTerminal({ username, chapters, totalLevels, getPlayerRank, dispatch, cheatsUnlocked, languages }) {
   const [input, setInput] = useState('');
   const [lines, setLines] = useState([]);
   const [cheatPhase, setCheatPhase] = useState(cheatsUnlocked ? 'done' : 'idle'); // idle | secret | done
@@ -180,7 +199,7 @@ function CheatTerminal({ username, chapters, totalLevels, getPlayerRank, dispatc
       <div className="space-y-1">
         <p><span className="text-neon-green">{username}@core</span>:<span className="text-neon-blue">~</span>$ status</p>
         <p>{'>'} Sistema operativo: <span className="text-neon-green">ACTIVO</span></p>
-        <p>{'>'} Módulos cargados: <span className="text-neon-yellow">{chapters.length} capítulos</span>, <span className="text-neon-blue">{totalLevels} niveles</span></p>
+        <p>{'>'} Lenguajes: <span className="text-neon-yellow">{languages?.length || 3}</span> — Módulos: <span className="text-neon-blue">{totalLevels} niveles</span></p>
         <p>{'>'} Agente: <span className="text-neon-purple">{username}</span> — <span className="text-neon-blue">{getPlayerRank()}</span></p>
         {cheatsUnlocked && <p>{'>'} Modo: <span className="text-neon-red">DESBLOQUEADO</span></p>}
         <p>{'>'} Estado: <span className="text-neon-green">Esperando comandos...</span></p>

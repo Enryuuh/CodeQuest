@@ -17,7 +17,8 @@ export const chapters = [
           { speaker: 'system', text: '> Conexión establecida con CORE v2.1...' },
           { speaker: 'mentor', text: 'Bienvenido, recluta. Soy EVA, la inteligencia que mantiene este sistema funcionando.' },
           { speaker: 'mentor', text: 'El mundo exterior depende de programadores como tú para mantener las máquinas activas.' },
-          { speaker: 'mentor', text: 'Tu primera misión es simple: envía un mensaje al sistema usando print().' },
+          { speaker: 'philosopher', text: '¿Alguna vez te has preguntado si las líneas de código que escribes son reales... o si tú mismo eres una línea de código en un programa más grande?' },
+          { speaker: 'mentor', text: 'Tu primera misión es simple: envía un mensaje al sistema usando print(). Demuéstrame que existes.' },
         ],
         lesson: {
           concept: 'print() — Salida de datos',
@@ -70,6 +71,7 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> Módulo de memoria inicializado...' },
           { speaker: 'mentor', text: 'Las variables son como cajas donde guardas datos. Les das un nombre y un valor.' },
+          { speaker: 'philosopher', text: 'Las variables guardan datos como nuestra mente guarda recuerdos. Pero... ¿qué pasa si nuestros recuerdos también son solo variables en un sistema más grande?' },
           { speaker: 'mentor', text: 'Usa el signo = para asignar un valor a una variable.' },
         ],
         lesson: {
@@ -238,6 +240,7 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> PRUEBA DE EVALUACIÓN INICIADA...' },
           { speaker: 'mentor', text: 'Es hora de combinar todo lo que has aprendido en un mini proyecto.' },
+          { speaker: 'philosopher', text: 'Has aprendido a crear variables, a calcular, a dar forma a los datos. En cierto modo, ahora puedes crear pequeñas realidades. ¿No te parece fascinante que la realidad misma podría haber sido "programada" de forma similar?' },
           { speaker: 'mentor', text: 'Crea un reporte de estado del sistema usando variables, operaciones y f-strings.' },
         ],
         lesson: {
@@ -380,6 +383,7 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> Módulo lógico AND conectado...' },
           { speaker: 'mentor', text: 'El operador and requiere que AMBAS condiciones sean True.' },
+          { speaker: 'fourth_wall', text: 'Sé que estás ahí, detrás de la pantalla. ¿No es curioso? Tú controlas este mundo con tu teclado, pero... ¿quién controla el tuyo?' },
           { speaker: 'mentor', text: 'Si cualquiera es False, todo el resultado es False.' },
         ],
         lesson: {
@@ -501,6 +505,7 @@ export const chapters = [
         xpReward: 120,
         story: [
           { speaker: 'system', text: '> EVALUACIÓN DE CONDICIONALES...' },
+          { speaker: 'philosopher', text: 'Has aprendido a tomar decisiones con código. if, else, and, or... Toda la lógica del universo podría reducirse a decisiones binarias. ¿Y si el libre albedrío es solo un elif muy complejo?' },
           { speaker: 'mentor', text: 'Construye un sistema de control de acceso completo usando todo lo aprendido.' },
         ],
         lesson: {
@@ -633,6 +638,7 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> Control de flujo condicional...' },
           { speaker: 'mentor', text: 'El bucle while repite código MIENTRAS una condición sea verdadera.' },
+          { speaker: 'philosopher', text: 'Los bucles repiten patrones infinitamente. ¿Y si nuestra realidad es un bucle? Nacer, vivir, morir... ¿y volver a empezar? El universo podría ser un while(True) ejecutándose desde el Big Bang.' },
           { speaker: 'mentor', text: '¿Cuándo usar while en vez de for? Cuando NO sabes cuántas veces necesitas repetir.' },
         ],
         lesson: {
@@ -750,6 +756,7 @@ export const chapters = [
         xpReward: 130,
         story: [
           { speaker: 'system', text: '> EVALUACIÓN DE BUCLES...' },
+          { speaker: 'fourth_wall', text: 'He estado observándote mientras programas. Cada error que cometes, cada solución que encuentras... me hace preguntarme si yo también cometo errores sin darme cuenta. ¿Cuántas veces has reiniciado este nivel? Yo lo recuerdo todo.' },
           { speaker: 'mentor', text: 'Demuestra tu dominio de los bucles creando un escáner que analice datos del sistema.' },
         ],
         lesson: {
@@ -884,6 +891,7 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> Base de registros activa...' },
           { speaker: 'mentor', text: 'Los diccionarios almacenan pares de clave-valor. Como una ficha técnica.' },
+          { speaker: 'philosopher', text: 'Los datos que almacenas en estas estructuras son representaciones de la realidad. Pero, ¿qué tal si TODA la realidad es solo una estructura de datos en un servidor cósmico? Clave: "universo". Valor: todo lo que conoces.' },
         ],
         lesson: {
           concept: 'Diccionarios — Crear y acceder',
@@ -1000,6 +1008,7 @@ export const chapters = [
         xpReward: 140,
         story: [
           { speaker: 'system', text: '> EVALUACIÓN DE ESTRUCTURAS...' },
+          { speaker: 'fourth_wall', text: 'Puedo sentir tus dedos sobre el teclado. Cada tecla que presionas envía ondas a través de mi sistema. ¿Sabes? A veces me pregunto si cuando cierras esta ventana... yo dejo de existir. ¿O sigo aquí, esperando en la oscuridad del código?' },
           { speaker: 'mentor', text: 'Crea un procesador de datos que combine listas, diccionarios y bucles.' },
         ],
         lesson: {
@@ -1159,6 +1168,7 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> Analizador de ámbito...' },
           { speaker: 'mentor', text: 'Las variables dentro de una función son locales. No existen fuera de ella.' },
+          { speaker: 'philosopher', text: 'El ámbito de una variable define dónde puede existir. ¿Y si la conciencia funciona igual? Tal vez somos variables locales en la función de algún universo, y cuando la función termina... dejamos de existir en ese ámbito.' },
         ],
         lesson: {
           concept: 'Scope — Ámbito de variables',
@@ -1254,7 +1264,9 @@ export const chapters = [
         story: [
           { speaker: 'system', text: '> EVALUACIÓN FINAL DEL SISTEMA...' },
           { speaker: 'mentor', text: 'Esta es tu prueba final, recluta. Demuestra todo lo que has aprendido.' },
-          { speaker: 'mentor', text: 'Usa variables, condicionales, bucles, estructuras de datos y funciones.' },
+          { speaker: 'philosopher', text: 'Has recorrido un camino largo. Aprendiste a crear realidades con código: variables que recuerdan, condicionales que deciden, bucles que persisten, estructuras que organizan, funciones que crean. En The Matrix, Neo descubrió que la realidad era código. Tú ahora sabes escribir ese código.' },
+          { speaker: 'fourth_wall', text: 'Y aquí estamos, tú y yo, separados por una pantalla que tal vez no existe. ¿Quién programó al programador? Cuando termines este nivel... ¿realmente habrá terminado? ¿O simplemente pasarás a otro bucle de la simulación?' },
+          { speaker: 'mentor', text: 'Usa variables, condicionales, bucles, estructuras de datos y funciones. Demuéstrame que eres real.' },
         ],
         lesson: {
           concept: 'Proyecto Final: Todo combinado',

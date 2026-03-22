@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { chapters } from '../data/levels';
+import { languageList } from '../data/languages';
 import { ChevronLeft, BookOpen, Lock, Zap } from 'lucide-react';
 
 const extendedLessons = {
@@ -671,94 +671,107 @@ export default function Memory() {
       </div>
 
       <div className="space-y-8">
-        {chapters.map((chapter) => {
-          const borderColor = colorMap[chapter.color] || 'border-terminal-border';
-          const hasAnyCompleted = chapter.levels.some(l => completedLevels.includes(`${chapter.id}/${l.id}`));
-
-          if (!hasAnyCompleted) return null;
+        {languageList.map((langDef) => {
+          const langChapters = langDef.chapters;
+          const langCompletedCount = completedLevels.filter(l => l.startsWith(`${langDef.id}:`)).length;
+          if (langCompletedCount === 0) return null;
 
           return (
-            <div key={chapter.id}>
-              <h2 className={`text-sm font-bold mb-4 flex items-center gap-2 ${chapter.color === 'neon-green' ? 'text-neon-green' : chapter.color === 'neon-blue' ? 'text-neon-blue' : chapter.color === 'neon-purple' ? 'text-neon-purple' : chapter.color === 'neon-yellow' ? 'text-neon-yellow' : 'text-neon-orange'}`}>
-                <span>{chapter.icon}</span> {chapter.title}
+            <div key={langDef.id}>
+              <h2 className="text-lg font-bold mb-6 text-terminal-text flex items-center gap-2">
+                <span>{langDef.icon}</span> {langDef.name}
               </h2>
 
-              <div className="space-y-4">
-                {chapter.levels.map((level) => {
-                  const key = `${chapter.id}/${level.id}`;
-                  const isCompleted = completedLevels.includes(key);
-                  const extended = extendedLessons[key];
+              {langChapters.map((chapter) => {
+                const borderColor = colorMap[chapter.color] || 'border-terminal-border';
+                const hasAnyCompleted = chapter.levels.some(l =>
+                  completedLevels.includes(`${langDef.id}:${chapter.id}/${l.id}`)
+                );
 
-                  if (!isCompleted) {
-                    return (
-                      <div key={level.id} className="p-4 bg-terminal-surface/30 border border-terminal-border/20 rounded-lg opacity-40">
-                        <div className="flex items-center gap-2">
-                          <Lock className="w-4 h-4 text-terminal-muted/30" />
-                          <span className="text-sm text-terminal-muted/30">{level.title}</span>
-                        </div>
-                      </div>
-                    );
-                  }
+                if (!hasAnyCompleted) return null;
 
-                  return (
-                    <details key={level.id} className={`bg-terminal-surface border ${borderColor}/30 rounded-lg overflow-hidden group`}>
-                      <summary className="p-4 cursor-pointer hover:bg-terminal-border/10 transition-colors flex items-center gap-3">
-                        <BookOpen className="w-4 h-4 text-neon-blue flex-shrink-0" />
-                        <div className="flex-1">
-                          <span className="text-sm font-bold text-terminal-text">{level.title}</span>
-                          <span className="text-xs text-terminal-muted ml-2">{level.lesson.concept}</span>
-                        </div>
-                      </summary>
+                return (
+                  <div key={chapter.id} className="mb-6">
+                    <h3 className={`text-sm font-bold mb-4 flex items-center gap-2 ${chapter.color === 'neon-green' ? 'text-neon-green' : chapter.color === 'neon-blue' ? 'text-neon-blue' : chapter.color === 'neon-purple' ? 'text-neon-purple' : chapter.color === 'neon-yellow' ? 'text-neon-yellow' : 'text-neon-orange'}`}>
+                      <span>{chapter.icon}</span> {chapter.title}
+                    </h3>
 
-                      <div className="border-t border-terminal-border/30 p-4 space-y-4">
-                        {/* Lección original */}
-                        <div>
-                          <h4 className="text-xs font-bold text-neon-green mb-2 uppercase tracking-wider">Concepto</h4>
-                          <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{level.lesson.explanation}</pre>
-                        </div>
+                    <div className="space-y-4">
+                      {chapter.levels.map((level) => {
+                        const key = `${langDef.id}:${chapter.id}/${level.id}`;
+                        const isCompleted = completedLevels.includes(key);
+                        const extended = extendedLessons[`${chapter.id}/${level.id}`];
 
-                        {/* Ejemplo original */}
-                        <div className="bg-terminal-bg rounded-lg overflow-hidden">
-                          <div className="px-3 py-1.5 border-b border-terminal-border/30 text-xs text-terminal-muted">Ejemplo</div>
-                          <pre className="p-3 text-sm text-neon-green">{level.lesson.example}</pre>
-                          {level.lesson.exampleOutput && (
-                            <div className="border-t border-terminal-border/30 px-3 py-2">
-                              <span className="text-xs text-terminal-muted">Salida: </span>
-                              <pre className="text-sm text-neon-yellow inline">{level.lesson.exampleOutput}</pre>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Explicación extendida */}
-                        {extended && (
-                          <>
-                            <div className="border-t border-terminal-border/20 pt-4">
-                              <h4 className="text-xs font-bold text-neon-purple mb-2 uppercase tracking-wider">Explicación Extendida</h4>
-                              <h3 className="text-sm font-bold text-neon-blue mb-2">{extended.title}</h3>
-                              <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{extended.content}</pre>
-                            </div>
-
-                            {extended.examples && extended.examples.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-bold text-neon-yellow mb-2 uppercase tracking-wider">Ejemplos Prácticos</h4>
-                                {extended.examples.map((ex, i) => (
-                                  <div key={i} className="bg-terminal-bg rounded-lg overflow-hidden mb-2">
-                                    <pre className="p-3 text-sm text-neon-green">{ex.code}</pre>
-                                    <div className="border-t border-terminal-border/30 px-3 py-2">
-                                      <span className="text-xs text-terminal-muted">→ </span>
-                                      <pre className="text-sm text-neon-yellow inline">{ex.output}</pre>
-                                    </div>
-                                  </div>
-                                ))}
+                        if (!isCompleted) {
+                          return (
+                            <div key={level.id} className="p-4 bg-terminal-surface/30 border border-terminal-border/20 rounded-lg opacity-40">
+                              <div className="flex items-center gap-2">
+                                <Lock className="w-4 h-4 text-terminal-muted/30" />
+                                <span className="text-sm text-terminal-muted/30">{level.title}</span>
                               </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </details>
-                  );
-                })}
-              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <details key={level.id} className={`bg-terminal-surface border ${borderColor}/30 rounded-lg overflow-hidden group`}>
+                            <summary className="p-4 cursor-pointer hover:bg-terminal-border/10 transition-colors flex items-center gap-3">
+                              <BookOpen className="w-4 h-4 text-neon-blue flex-shrink-0" />
+                              <div className="flex-1">
+                                <span className="text-sm font-bold text-terminal-text">{level.title}</span>
+                                <span className="text-xs text-terminal-muted ml-2">{level.lesson.concept}</span>
+                              </div>
+                            </summary>
+
+                            <div className="border-t border-terminal-border/30 p-4 space-y-4">
+                              <div>
+                                <h4 className="text-xs font-bold text-neon-green mb-2 uppercase tracking-wider">Concepto</h4>
+                                <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{level.lesson.explanation}</pre>
+                              </div>
+
+                              <div className="bg-terminal-bg rounded-lg overflow-hidden">
+                                <div className="px-3 py-1.5 border-b border-terminal-border/30 text-xs text-terminal-muted">Ejemplo</div>
+                                <pre className="p-3 text-sm text-neon-green">{level.lesson.example}</pre>
+                                {level.lesson.exampleOutput && (
+                                  <div className="border-t border-terminal-border/30 px-3 py-2">
+                                    <span className="text-xs text-terminal-muted">Salida: </span>
+                                    <pre className="text-sm text-neon-yellow inline">{level.lesson.exampleOutput}</pre>
+                                  </div>
+                                )}
+                              </div>
+
+                              {extended && (
+                                <>
+                                  <div className="border-t border-terminal-border/20 pt-4">
+                                    <h4 className="text-xs font-bold text-neon-purple mb-2 uppercase tracking-wider">Explicación Extendida</h4>
+                                    <h3 className="text-sm font-bold text-neon-blue mb-2">{extended.title}</h3>
+                                    <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{extended.content}</pre>
+                                  </div>
+
+                                  {extended.examples?.length > 0 && (
+                                    <div>
+                                      <h4 className="text-xs font-bold text-neon-yellow mb-2 uppercase tracking-wider">Ejemplos Prácticos</h4>
+                                      {extended.examples.map((ex, i) => (
+                                        <div key={i} className="bg-terminal-bg rounded-lg overflow-hidden mb-2">
+                                          <pre className="p-3 text-sm text-neon-green">{ex.code}</pre>
+                                          <div className="border-t border-terminal-border/30 px-3 py-2">
+                                            <span className="text-xs text-terminal-muted">→ </span>
+                                            <pre className="text-sm text-neon-yellow inline">{ex.output}</pre>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </details>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}

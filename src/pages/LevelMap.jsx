@@ -1,6 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { chapters } from '../data/levels';
+import { getChaptersForLanguage, getLanguage } from '../data/languages';
 import { Lock, Check, ChevronLeft, Zap, Award, Star } from 'lucide-react';
 
 const colorMap = {
@@ -13,18 +13,28 @@ const colorMap = {
 
 export default function LevelMap() {
   const navigate = useNavigate();
-  const { availableXp, isLevelUnlocked, isLevelCompleted, getLevelStars, getPlayerRank, username } = useGame();
+  const params = useParams();
+  const { availableXp, isLevelUnlocked, isLevelCompleted, getLevelStars, getPlayerRank, username, selectedLanguage, dispatch } = useGame();
+
+  const lang = params.lang || selectedLanguage || 'python';
+  const chapters = getChaptersForLanguage(lang);
+  const langInfo = getLanguage(lang);
+
+  // Set language in context if from URL
+  if (lang !== selectedLanguage) {
+    dispatch({ type: 'SELECT_LANGUAGE', payload: lang });
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/lenguajes')}
           className="flex items-center gap-1 text-terminal-muted hover:text-neon-green transition-colors cursor-pointer"
         >
           <ChevronLeft className="w-4 h-4" />
-          Volver
+          Lenguajes
         </button>
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/logros')} className="flex items-center gap-1 text-neon-yellow hover:text-neon-orange transition-colors cursor-pointer">
@@ -38,15 +48,19 @@ export default function LevelMap() {
         </div>
       </div>
 
-      <h1 className="text-2xl font-bold text-center mb-2 text-terminal-text">Mapa de Misiones</h1>
-      <p className="text-center text-terminal-muted text-sm mb-10">Agente <span className="text-neon-purple">{username}</span> — Completa cada nivel para desbloquear el siguiente</p>
+      <h1 className="text-2xl font-bold text-center mb-2 text-terminal-text">
+        {langInfo?.icon} {langInfo?.name || 'Mapa'}
+      </h1>
+      <p className="text-center text-terminal-muted text-sm mb-10">
+        Agente <span className="text-neon-purple">{username}</span> — Completa cada nivel para desbloquear el siguiente
+      </p>
 
       {/* Chapters */}
       <div className="space-y-10">
         {chapters.map((chapter, chapterIdx) => {
           const colors = colorMap[chapter.color] || colorMap['neon-green'];
-          const chapterCompleted = chapter.levels.every(l => isLevelCompleted(chapter.id, l.id));
-          const firstLevelUnlocked = isLevelUnlocked(chapter.id, chapter.levels[0].id);
+          const chapterCompleted = chapter.levels.every(l => isLevelCompleted(chapter.id, l.id, lang));
+          const firstLevelUnlocked = isLevelUnlocked(chapter.id, chapter.levels[0].id, lang);
 
           return (
             <div key={chapter.id} className="animate-slide-up" style={{ animationDelay: `${chapterIdx * 0.1}s` }}>
@@ -65,13 +79,13 @@ export default function LevelMap() {
               {/* Levels */}
               <div className="grid gap-3 ml-4 md:ml-8">
                 {chapter.levels.map((level, levelIdx) => {
-                  const unlocked = isLevelUnlocked(chapter.id, level.id);
-                  const completed = isLevelCompleted(chapter.id, level.id);
+                  const unlocked = isLevelUnlocked(chapter.id, level.id, lang);
+                  const completed = isLevelCompleted(chapter.id, level.id, lang);
 
                   return (
                     <button
                       key={level.id}
-                      onClick={() => unlocked && navigate(`/nivel/${chapter.id}/${level.id}`)}
+                      onClick={() => unlocked && navigate(`/nivel/${lang}/${chapter.id}/${level.id}`)}
                       disabled={!unlocked}
                       className={`relative flex items-center gap-4 p-4 rounded-lg border transition-all duration-300 text-left cursor-pointer
                         ${completed
@@ -108,7 +122,7 @@ export default function LevelMap() {
                         {completed && (
                           <div className="flex gap-0.5">
                             {[1,2,3,4,5].map(i => (
-                              <Star key={i} className={`w-3 h-3 ${i <= getLevelStars(chapter.id, level.id) ? 'text-neon-yellow fill-neon-yellow' : 'text-terminal-border'}`} />
+                              <Star key={i} className={`w-3 h-3 ${i <= getLevelStars(chapter.id, level.id, lang) ? 'text-neon-yellow fill-neon-yellow' : 'text-terminal-border'}`} />
                             ))}
                           </div>
                         )}

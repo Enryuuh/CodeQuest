@@ -1,20 +1,39 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { getLevelById, getNextLevel } from '../data/levels';
+import { getLevelByIdForLanguage, getNextLevelForLanguage } from '../data/languages';
 import { runPython } from '../utils/pythonRunner';
+import { runJava } from '../utils/javaRunner';
+import { runCSharp } from '../utils/csharpRunner';
 import { ChevronLeft, Play, RotateCcw, Lightbulb, BookOpen, Zap, ArrowRight, Check, X, MessageSquare, Star } from 'lucide-react';
 import AriaAvatar from '../components/AriaAvatar';
 import { playTypewriterKey, playUserKey, playSuccess, playError } from '../utils/sounds';
 
 const PHASES = ['story', 'lesson', 'challenge', 'decision', 'complete'];
 
-export default function Level() {
-  const { chapterId, levelId } = useParams();
-  const navigate = useNavigate();
-  const { isLevelCompleted, isLevelUnlocked, dispatch, decisions } = useGame();
+const runners = {
+  python: runPython,
+  java: runJava,
+  csharp: runCSharp,
+};
 
-  const levelData = useMemo(() => getLevelById(chapterId, levelId), [chapterId, levelId]);
+const editorFileNames = {
+  python: 'editor.py',
+  java: 'Editor.java',
+  csharp: 'Editor.cs',
+};
+
+export default function Level() {
+  const params = useParams();
+  const navigate = useNavigate();
+  const { isLevelCompleted, isLevelUnlocked, dispatch, decisions, selectedLanguage } = useGame();
+
+  // Support both /nivel/:lang/:chapterId/:levelId and /nivel/:chapterId/:levelId
+  const lang = params.lang && ['python', 'java', 'csharp'].includes(params.lang) ? params.lang : (selectedLanguage || 'python');
+  const chapterId = params.lang && ['python', 'java', 'csharp'].includes(params.lang) ? params.chapterId : (params.chapterId || params.lang);
+  const levelId = params.levelId;
+
+  const levelData = useMemo(() => getLevelByIdForLanguage(lang, chapterId, levelId), [lang, chapterId, levelId]);
   const [phase, setPhase] = useState('story');
   const [storyIndex, setStoryIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -29,10 +48,10 @@ export default function Level() {
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    if (!levelData || !isLevelUnlocked(chapterId, levelId)) {
-      navigate('/mapa');
+    if (!levelData || !isLevelUnlocked(chapterId, levelId, lang)) {
+      navigate(`/mapa/${lang}`);
     }
-  }, [levelData, chapterId, levelId]);
+  }, [levelData, chapterId, levelId, lang]);
 
   // Typewriter effect
   useEffect(() => {
@@ -45,14 +64,15 @@ export default function Level() {
     setDisplayedText('');
     let i = 0;
     const text = message.text;
-    const speed = message.speaker === 'system' ? 15 : 30;
+    const speed = message.speaker === 'system' ? 15 :
+                  message.speaker === 'fourth_wall' ? 40 :
+                  message.speaker === 'philosopher' ? 35 : 30;
 
     const timer = setInterval(() => {
       if (i < text.length) {
         setDisplayedText(text.slice(0, i + 1));
-        // Sonido de typewriter suave (no en cada carácter para no saturar)
         if (i % 2 === 0 && text[i] !== ' ') {
-          playTypewriterKey(0.08 + Math.random() * 0.06);
+          playTypewriterKey(message.speaker === 'fourth_wall' ? 0.04 : 0.08 + Math.random() * 0.06);
         }
         i++;
       } else {
@@ -98,7 +118,8 @@ export default function Level() {
   };
 
   const handleRunCode = () => {
-    const result = runPython(code);
+    const runCode = runners[lang] || runPython;
+    const result = runCode(code);
     setOutput(result);
 
     const isValid = levelData.challenge.validation(code, result.output);
@@ -123,7 +144,7 @@ export default function Level() {
     const option = levelData.decision.options[optionIndex];
     setSelectedDecision(optionIndex);
 
-    dispatch({ type: 'MAKE_DECISION', payload: { chapterId, levelId, optionIndex } });
+    dispatch({ type: 'MAKE_DECISION', payload: { lang, chapterId, levelId, optionIndex } });
 
     const bonus = option.bonusXp || 0;
     setBonusXp(bonus);
@@ -138,13 +159,12 @@ export default function Level() {
     const stars = Math.max(1, 5 - errors);
     dispatch({
       type: 'COMPLETE_LEVEL',
-      payload: { chapterId, levelId, xp: levelData.xpReward + bonus, stars },
+      payload: { lang, chapterId, levelId, xp: levelData.xpReward + bonus, stars },
     });
     setPhase('complete');
   };
 
   const handleKeyDown = (e) => {
-    // Sonido de teclado del usuario
     if (!e.repeat && e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter' || e.key === 'Tab') {
       playUserKey(e.key === 'Enter' || e.key === ' ' ? 0.2 : 0.12 + Math.random() * 0.06);
     }
@@ -161,20 +181,31 @@ export default function Level() {
 
   const getSpeakerStyle = (speaker) => {
     if (speaker === 'system') return 'text-neon-green font-mono text-sm';
+    if (speaker === 'philosopher') return 'text-neon-purple italic';
+    if (speaker === 'fourth_wall') return 'text-neon-red animate-pulse';
     return 'text-neon-blue';
   };
 
   const getSpeakerLabel = (speaker) => {
     if (speaker === 'system') return '';
     if (speaker === 'mentor') return 'EVA > ';
+    if (speaker === 'philosopher') return '◈ ';
+    if (speaker === 'fourth_wall') return '⟐ ';
     return '';
+  };
+
+  const getSpeakerAvatar = (speaker) => {
+    if (speaker === 'mentor') return true;
+    if (speaker === 'philosopher') return true;
+    if (speaker === 'fourth_wall') return true;
+    return false;
   };
 
   return (
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate('/mapa')} className="flex items-center gap-1 text-terminal-muted hover:text-neon-green transition-colors cursor-pointer">
+        <button onClick={() => navigate(`/mapa/${lang}`)} className="flex items-center gap-1 text-terminal-muted hover:text-neon-green transition-colors cursor-pointer">
           <ChevronLeft className="w-4 h-4" /> Mapa
         </button>
         <div className="text-center">
@@ -207,15 +238,24 @@ export default function Level() {
         {/* STORY PHASE */}
         {phase === 'story' && (
           <div className="flex flex-col items-center justify-center min-h-[50vh]">
-            {/* EVA Avatar — visible when mentor speaks */}
-            {levelData.story[storyIndex]?.speaker === 'mentor' && (
+            {/* EVA Avatar — visible when mentor/philosopher/fourth_wall speaks */}
+            {getSpeakerAvatar(levelData.story[storyIndex]?.speaker) && (
               <div className="mb-6 flex flex-col items-center animate-fade-in">
                 <AriaAvatar isSpeaking={isTyping} size={96} />
-                <span className="text-neon-blue text-xs mt-2 font-bold tracking-wider">E.V.A.</span>
+                <span className={`text-xs mt-2 font-bold tracking-wider ${
+                  levelData.story[storyIndex]?.speaker === 'fourth_wall' ? 'text-neon-red animate-pulse' :
+                  levelData.story[storyIndex]?.speaker === 'philosopher' ? 'text-neon-purple' : 'text-neon-blue'
+                }`}>
+                  {levelData.story[storyIndex]?.speaker === 'fourth_wall' ? '? ? ?' :
+                   levelData.story[storyIndex]?.speaker === 'philosopher' ? '◈ E.V.A. ◈' : 'E.V.A.'}
+                </span>
               </div>
             )}
 
-            <div className="w-full max-w-2xl bg-terminal-surface border border-terminal-border rounded-lg p-6">
+            <div className={`w-full max-w-2xl bg-terminal-surface border rounded-lg p-6 ${
+              levelData.story[storyIndex]?.speaker === 'fourth_wall' ? 'border-neon-red/50 shadow-[0_0_20px_rgba(248,81,73,0.2)]' :
+              levelData.story[storyIndex]?.speaker === 'philosopher' ? 'border-neon-purple/50' : 'border-terminal-border'
+            }`}>
               {/* Terminal header */}
               <div className="flex gap-1.5 mb-4">
                 <div className="w-3 h-3 rounded-full bg-neon-red/70" />
@@ -321,7 +361,7 @@ export default function Level() {
                     <div className="w-3 h-3 rounded-full bg-neon-yellow/70" />
                     <div className="w-3 h-3 rounded-full bg-neon-green/70" />
                   </div>
-                  <span>editor.py</span>
+                  <span>{editorFileNames[lang] || 'editor.py'}</span>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -462,6 +502,7 @@ export default function Level() {
         {/* COMPLETE PHASE */}
         {phase === 'complete' && (() => {
           const earnedStars = Math.max(1, 5 - errors);
+          const nextLevel = getNextLevelForLanguage(lang, chapterId, levelId);
           return (
           <div className="max-w-2xl mx-auto flex flex-col items-center justify-center min-h-[50vh] animate-fade-in">
             <div className="text-center mb-8">
@@ -503,27 +544,24 @@ export default function Level() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => navigate('/mapa')}
+                onClick={() => navigate(`/mapa/${lang}`)}
                 className="px-6 py-3 border border-terminal-border text-terminal-muted rounded-lg hover:border-neon-blue hover:text-neon-blue transition-colors cursor-pointer"
               >
                 Ver Mapa
               </button>
-              {getNextLevel(chapterId, levelId) ? (
+              {nextLevel ? (
                 <button
-                  onClick={() => {
-                    const next = getNextLevel(chapterId, levelId);
-                    navigate(`/nivel/${next.chapterId}/${next.levelId}`);
-                  }}
+                  onClick={() => navigate(`/nivel/${lang}/${nextLevel.chapterId}/${nextLevel.levelId}`)}
                   className="flex items-center gap-2 px-6 py-3 bg-neon-green/10 border border-neon-green text-neon-green rounded-lg font-bold hover:bg-neon-green/20 transition-all cursor-pointer"
                 >
                   Siguiente Nivel <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/lenguajes')}
                   className="flex items-center gap-2 px-6 py-3 bg-neon-yellow/10 border border-neon-yellow text-neon-yellow rounded-lg font-bold cursor-pointer"
                 >
-                  🏆 ¡Juego Completado!
+                  🏆 ¡Lenguaje Completado!
                 </button>
               )}
             </div>
