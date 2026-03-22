@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { chapters, getTotalLevels } from '../data/levels';
@@ -229,11 +229,12 @@ function UsernameScreen({ dispatch }) {
   const [phase, setPhase] = useState('intro'); // 'intro' | 'input'
   const [evaText, setEvaText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const inputRef = useRef(null);
 
   const introMessage = 'Bienvenido al sistema CORE. Soy EVA, la inteligencia artificial que te guiará en tu camino como programador. Antes de empezar... necesito saber cómo llamarte.';
 
   // Typewriter para EVA
-  useState(() => {
+  useEffect(() => {
     let i = 0;
     const timer = setInterval(() => {
       if (i < introMessage.length) {
@@ -249,7 +250,14 @@ function UsernameScreen({ dispatch }) {
       }
     }, 25);
     return () => clearInterval(timer);
-  });
+  }, []);
+
+  // Foco manual cuando aparece el input (autoFocus no es fiable en Electron)
+  useEffect(() => {
+    if (phase === 'input') {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [phase]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -304,12 +312,12 @@ function UsernameScreen({ dispatch }) {
               <div className="flex-1 relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-terminal-muted" />
                 <input
+                  ref={inputRef}
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Tu nombre..."
                   maxLength={20}
-                  autoFocus
                   className="w-full bg-terminal-bg border border-terminal-border rounded-lg py-3 pl-10 pr-4 text-neon-green text-sm focus:outline-none focus:border-neon-green/50 placeholder:text-terminal-muted/30"
                 />
               </div>
