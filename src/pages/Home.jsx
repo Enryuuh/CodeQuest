@@ -91,16 +91,14 @@ export default function Home() {
       </button>
 
       {/* Memoria */}
-      {completedLevels.length > 0 && (
-        <button
-          onClick={() => navigate('/memoria')}
-          className="mt-3 flex items-center gap-2 px-6 py-3 bg-neon-blue/10 border border-neon-blue/50 text-neon-blue rounded-lg font-bold hover:bg-neon-blue/20 hover:border-neon-blue transition-all animate-slide-up cursor-pointer"
-          style={{ animationDelay: '0.3s' }}
-        >
-          <BookOpen className="w-5 h-5" />
-          Memoria ({completedLevels.length} lecciones)
-        </button>
-      )}
+      <button
+        onClick={() => navigate('/memoria')}
+        className="mt-3 flex items-center gap-2 px-6 py-3 bg-neon-blue/10 border border-neon-blue/50 text-neon-blue rounded-lg font-bold hover:bg-neon-blue/20 hover:border-neon-blue transition-all animate-slide-up cursor-pointer"
+        style={{ animationDelay: '0.3s' }}
+      >
+        <BookOpen className="w-5 h-5" />
+        Memoria ({completedLevels.length}/{totalLevels} lecciones)
+      </button>
 
       {/* Reset */}
       {completedLevels.length > 0 && (

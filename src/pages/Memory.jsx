@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { chapters } from '../data/levels';
-import { ChevronLeft, BookOpen, Lock, Zap } from 'lucide-react';
+import { ChevronLeft, BookOpen, Lock, Zap, ChevronDown, ChevronRight } from 'lucide-react';
 
 const extendedLessons = {
   // FUNDAMENTOS
@@ -1168,24 +1169,163 @@ Con todo lo que aprendiste puedes:
   },
 };
 
-const colorMap = {
-  'neon-green': 'border-neon-green',
-  'neon-blue': 'border-neon-blue',
-  'neon-purple': 'border-neon-purple',
-  'neon-yellow': 'border-neon-yellow',
-  'neon-orange': 'border-neon-orange',
+const colorClasses = {
+  'neon-green':  { text: 'text-neon-green',  border: 'border-neon-green',  bg: 'bg-neon-green/10',  progress: 'bg-neon-green' },
+  'neon-blue':   { text: 'text-neon-blue',   border: 'border-neon-blue',   bg: 'bg-neon-blue/10',   progress: 'bg-neon-blue' },
+  'neon-purple': { text: 'text-neon-purple', border: 'border-neon-purple', bg: 'bg-neon-purple/10', progress: 'bg-neon-purple' },
+  'neon-yellow': { text: 'text-neon-yellow', border: 'border-neon-yellow', bg: 'bg-neon-yellow/10', progress: 'bg-neon-yellow' },
+  'neon-orange': { text: 'text-neon-orange', border: 'border-neon-orange', bg: 'bg-neon-orange/10', progress: 'bg-neon-orange' },
 };
 
+// ─── Componente de memoria de un nivel individual ────────────────────────────
+function LevelMemory({ level, chapterId, isCompleted, color }) {
+  const [open, setOpen] = useState(false);
+  const key = `${chapterId}/${level.id}`;
+  const extended = extendedLessons[key];
+  const cc = colorClasses[color] || colorClasses['neon-green'];
+
+  if (!isCompleted) {
+    return (
+      <div className="p-3 bg-terminal-surface/20 border border-terminal-border/20 rounded-lg flex items-center gap-3 opacity-40">
+        <Lock className="w-3.5 h-3.5 text-terminal-muted/40 flex-shrink-0" />
+        <span className="text-sm text-terminal-muted/40">{level.title}</span>
+        <span className="ml-auto text-xs text-terminal-muted/30">{level.lesson.concept}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`bg-terminal-surface border ${cc.border}/30 rounded-lg overflow-hidden`}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full p-3 flex items-center gap-3 hover:bg-terminal-border/10 transition-colors cursor-pointer text-left"
+      >
+        <BookOpen className={`w-3.5 h-3.5 ${cc.text} flex-shrink-0`} />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-bold text-terminal-text">{level.title}</span>
+          <span className="text-xs text-terminal-muted ml-2 truncate">{level.lesson.concept}</span>
+        </div>
+        {open ? <ChevronDown className="w-4 h-4 text-terminal-muted flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-terminal-muted flex-shrink-0" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-terminal-border/30 p-4 space-y-4">
+          {/* Concepto */}
+          <div>
+            <h4 className="text-xs font-bold text-neon-green mb-2 uppercase tracking-wider">Concepto</h4>
+            <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{level.lesson.explanation}</pre>
+          </div>
+
+          {/* Ejemplo */}
+          <div className="bg-terminal-bg rounded-lg overflow-hidden">
+            <div className="px-3 py-1.5 border-b border-terminal-border/30 text-xs text-terminal-muted">Ejemplo</div>
+            <pre className="p-3 text-sm text-neon-green">{level.lesson.example}</pre>
+            {level.lesson.exampleOutput && (
+              <div className="border-t border-terminal-border/30 px-3 py-2">
+                <span className="text-xs text-terminal-muted">→ </span>
+                <pre className="text-sm text-neon-yellow inline">{level.lesson.exampleOutput}</pre>
+              </div>
+            )}
+          </div>
+
+          {/* Explicación extendida */}
+          {extended && (
+            <>
+              <div className="border-t border-terminal-border/20 pt-4">
+                <h4 className="text-xs font-bold text-neon-purple mb-2 uppercase tracking-wider">Explicación Extendida</h4>
+                <h3 className={`text-sm font-bold ${cc.text} mb-2`}>{extended.title}</h3>
+                <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{extended.content}</pre>
+              </div>
+              {extended.examples?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-neon-yellow mb-2 uppercase tracking-wider">Ejemplos Prácticos</h4>
+                  {extended.examples.map((ex, i) => (
+                    <div key={i} className="bg-terminal-bg rounded-lg overflow-hidden mb-2">
+                      <pre className="p-3 text-sm text-neon-green">{ex.code}</pre>
+                      <div className="border-t border-terminal-border/30 px-3 py-2">
+                        <span className="text-xs text-terminal-muted">→ </span>
+                        <pre className="text-sm text-neon-yellow inline">{ex.output}</pre>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Vista de detalle de un capítulo ─────────────────────────────────────────
+function ChapterDetail({ chapter, completedLevels, onBack }) {
+  const cc = colorClasses[chapter.color] || colorClasses['neon-green'];
+  const completed = chapter.levels.filter(l => completedLevels.includes(`${chapter.id}/${l.id}`)).length;
+  const total = chapter.levels.length;
+
+  return (
+    <div>
+      {/* Header del capítulo */}
+      <div className={`mb-6 p-4 bg-terminal-surface border ${cc.border}/40 rounded-lg`}>
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 text-terminal-muted hover:text-terminal-text transition-colors cursor-pointer mb-3 text-sm"
+        >
+          <ChevronLeft className="w-4 h-4" /> Todos los capítulos
+        </button>
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-3xl">{chapter.icon}</span>
+          <div>
+            <h2 className={`text-lg font-bold ${cc.text}`}>{chapter.title}</h2>
+            <p className="text-xs text-terminal-muted">{chapter.description}</p>
+          </div>
+          <div className={`ml-auto text-right`}>
+            <div className={`text-2xl font-bold ${cc.text}`}>{completed}/{total}</div>
+            <div className="text-xs text-terminal-muted">desbloqueadas</div>
+          </div>
+        </div>
+        <div className="h-1.5 bg-terminal-border rounded-full overflow-hidden">
+          <div className={`h-full ${cc.progress} rounded-full transition-all duration-500`} style={{ width: `${(completed / total) * 100}%` }} />
+        </div>
+      </div>
+
+      {/* Lista de niveles */}
+      <div className="space-y-2">
+        {chapter.levels.map((level) => (
+          <LevelMemory
+            key={level.id}
+            level={level}
+            chapterId={chapter.id}
+            isCompleted={completedLevels.includes(`${chapter.id}/${level.id}`)}
+            color={chapter.color}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Vista principal: grid de capítulos ──────────────────────────────────────
 export default function Memory() {
   const navigate = useNavigate();
   const { completedLevels, availableXp, getPlayerRank } = useGame();
+  const [selectedChapter, setSelectedChapter] = useState(null);
+
+  const totalCompleted = completedLevels.length;
+  const totalLevels = chapters.reduce((acc, c) => acc + c.levels.length, 0);
+
+  const chapter = selectedChapter ? chapters.find(c => c.id === selectedChapter) : null;
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate('/')} className="flex items-center gap-1 text-terminal-muted hover:text-neon-green transition-colors cursor-pointer">
-          <ChevronLeft className="w-4 h-4" /> Volver
+        <button
+          onClick={() => selectedChapter ? setSelectedChapter(null) : navigate('/')}
+          className="flex items-center gap-1 text-terminal-muted hover:text-neon-green transition-colors cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" /> {selectedChapter ? 'Capítulos' : 'Volver'}
         </button>
         <div className="flex items-center gap-4">
           <span className="text-neon-purple text-sm">{getPlayerRank()}</span>
@@ -1196,108 +1336,91 @@ export default function Memory() {
         </div>
       </div>
 
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <BookOpen className="w-6 h-6 text-neon-blue" />
-          <h1 className="text-2xl font-bold text-terminal-text">Memoria</h1>
-        </div>
-        <p className="text-terminal-muted text-sm">Explicaciones extendidas de cada lección aprendida</p>
-        <p className="text-terminal-muted text-xs mt-1">{completedLevels.length} lecciones desbloqueadas</p>
-      </div>
-
-      <div className="space-y-8">
-        {chapters.map((chapter) => {
-          const borderColor = colorMap[chapter.color] || 'border-terminal-border';
-          const hasAnyCompleted = chapter.levels.some(l => completedLevels.includes(`${chapter.id}/${l.id}`));
-
-          if (!hasAnyCompleted) return null;
-
-          return (
-            <div key={chapter.id}>
-              <h2 className={`text-sm font-bold mb-4 flex items-center gap-2 ${chapter.color === 'neon-green' ? 'text-neon-green' : chapter.color === 'neon-blue' ? 'text-neon-blue' : chapter.color === 'neon-purple' ? 'text-neon-purple' : chapter.color === 'neon-yellow' ? 'text-neon-yellow' : 'text-neon-orange'}`}>
-                <span>{chapter.icon}</span> {chapter.title}
-              </h2>
-
-              <div className="space-y-4">
-                {chapter.levels.map((level) => {
-                  const key = `${chapter.id}/${level.id}`;
-                  const isCompleted = completedLevels.includes(key);
-                  const extended = extendedLessons[key];
-
-                  if (!isCompleted) {
-                    return (
-                      <div key={level.id} className="p-4 bg-terminal-surface/30 border border-terminal-border/20 rounded-lg opacity-40">
-                        <div className="flex items-center gap-2">
-                          <Lock className="w-4 h-4 text-terminal-muted/30" />
-                          <span className="text-sm text-terminal-muted/30">{level.title}</span>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <details key={level.id} className={`bg-terminal-surface border ${borderColor}/30 rounded-lg overflow-hidden group`}>
-                      <summary className="p-4 cursor-pointer hover:bg-terminal-border/10 transition-colors flex items-center gap-3">
-                        <BookOpen className="w-4 h-4 text-neon-blue flex-shrink-0" />
-                        <div className="flex-1">
-                          <span className="text-sm font-bold text-terminal-text">{level.title}</span>
-                          <span className="text-xs text-terminal-muted ml-2">{level.lesson.concept}</span>
-                        </div>
-                      </summary>
-
-                      <div className="border-t border-terminal-border/30 p-4 space-y-4">
-                        {/* Lección original */}
-                        <div>
-                          <h4 className="text-xs font-bold text-neon-green mb-2 uppercase tracking-wider">Concepto</h4>
-                          <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{level.lesson.explanation}</pre>
-                        </div>
-
-                        {/* Ejemplo original */}
-                        <div className="bg-terminal-bg rounded-lg overflow-hidden">
-                          <div className="px-3 py-1.5 border-b border-terminal-border/30 text-xs text-terminal-muted">Ejemplo</div>
-                          <pre className="p-3 text-sm text-neon-green">{level.lesson.example}</pre>
-                          {level.lesson.exampleOutput && (
-                            <div className="border-t border-terminal-border/30 px-3 py-2">
-                              <span className="text-xs text-terminal-muted">Salida: </span>
-                              <pre className="text-sm text-neon-yellow inline">{level.lesson.exampleOutput}</pre>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Explicación extendida */}
-                        {extended && (
-                          <>
-                            <div className="border-t border-terminal-border/20 pt-4">
-                              <h4 className="text-xs font-bold text-neon-purple mb-2 uppercase tracking-wider">Explicación Extendida</h4>
-                              <h3 className="text-sm font-bold text-neon-blue mb-2">{extended.title}</h3>
-                              <pre className="text-sm text-terminal-text whitespace-pre-wrap leading-relaxed">{extended.content}</pre>
-                            </div>
-
-                            {extended.examples && extended.examples.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-bold text-neon-yellow mb-2 uppercase tracking-wider">Ejemplos Prácticos</h4>
-                                {extended.examples.map((ex, i) => (
-                                  <div key={i} className="bg-terminal-bg rounded-lg overflow-hidden mb-2">
-                                    <pre className="p-3 text-sm text-neon-green">{ex.code}</pre>
-                                    <div className="border-t border-terminal-border/30 px-3 py-2">
-                                      <span className="text-xs text-terminal-muted">→ </span>
-                                      <pre className="text-sm text-neon-yellow inline">{ex.output}</pre>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </details>
-                  );
-                })}
-              </div>
+      {chapter ? (
+        // ── Detalle del capítulo
+        <ChapterDetail
+          chapter={chapter}
+          completedLevels={completedLevels}
+          onBack={() => setSelectedChapter(null)}
+        />
+      ) : (
+        // ── Grid de capítulos
+        <>
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <BookOpen className="w-6 h-6 text-neon-blue" />
+              <h1 className="text-2xl font-bold text-terminal-text">Memoria</h1>
             </div>
-          );
-        })}
-      </div>
+            <p className="text-terminal-muted text-sm">Tus conocimientos acumulados — se desbloquean al completar niveles</p>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <div className="h-1.5 w-48 bg-terminal-border rounded-full overflow-hidden">
+                <div className="h-full bg-neon-blue rounded-full transition-all duration-500" style={{ width: `${(totalCompleted / totalLevels) * 100}%` }} />
+              </div>
+              <span className="text-xs text-neon-blue font-bold">{totalCompleted}/{totalLevels}</span>
+            </div>
+          </div>
+
+          {/* Lenguaje actual */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs text-terminal-muted uppercase tracking-wider">Lenguaje</span>
+            <span className="px-3 py-1 bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-bold rounded-full">🐍 Python</span>
+          </div>
+
+          {/* Grid de capítulos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {chapters.map((ch) => {
+              const cc = colorClasses[ch.color] || colorClasses['neon-green'];
+              const done = ch.levels.filter(l => completedLevels.includes(`${ch.id}/${l.id}`)).length;
+              const total = ch.levels.length;
+              const pct = (done / total) * 100;
+              const isLocked = done === 0;
+
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => setSelectedChapter(ch.id)}
+                  className={`text-left p-4 bg-terminal-surface border ${cc.border}/30 rounded-lg hover:${cc.bg} hover:border-opacity-60 transition-all cursor-pointer group ${isLocked ? 'opacity-50' : ''}`}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="text-2xl">{ch.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-bold text-sm ${cc.text} group-hover:brightness-125 transition-all`}>{ch.title}</div>
+                      <div className="text-xs text-terminal-muted mt-0.5 truncate">{ch.description}</div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {isLocked
+                        ? <Lock className="w-4 h-4 text-terminal-muted/40" />
+                        : <span className={`text-sm font-bold ${cc.text}`}>{done}/{total}</span>
+                      }
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="h-1 bg-terminal-border rounded-full overflow-hidden">
+                    <div className={`h-full ${cc.progress} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between">
+                    <div className="flex gap-1">
+                      {ch.levels.map((l) => {
+                        const done = completedLevels.includes(`${ch.id}/${l.id}`);
+                        return <div key={l.id} className={`w-2 h-2 rounded-full ${done ? cc.progress : 'bg-terminal-border'}`} />;
+                      })}
+                    </div>
+                    <ChevronRight className={`w-4 h-4 ${cc.text} opacity-50 group-hover:opacity-100 transition-opacity`} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {totalCompleted === 0 && (
+            <div className="mt-8 text-center p-6 border border-terminal-border/30 rounded-lg">
+              <p className="text-terminal-muted text-sm">Completa tu primer nivel para desbloquear memorias</p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
