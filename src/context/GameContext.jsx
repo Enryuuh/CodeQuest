@@ -1,5 +1,7 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import { chapters } from '../data/levels';
+import { createContext, useContext, useReducer, useEffect, useMemo } from 'react';
+import { chapters as chaptersPython } from '../data/levels';
+import { chapters as chaptersJava } from '../data/levels_java';
+import { chapters as chaptersCSharp } from '../data/levels_csharp';
 import { achievements } from '../data/achievements';
 
 const GameContext = createContext();
@@ -8,6 +10,7 @@ const STORAGE_KEY = 'codequest_progress';
 
 const initialState = {
   username: '',
+  language: 'python', // python, java, csharp
   xp: 0,
   totalXpEarned: 0,
   completedLevels: [],
@@ -79,6 +82,8 @@ function reducer(state, action) {
     }
     case 'SET_USERNAME':
       return { ...state, username: action.payload };
+    case 'SET_LANGUAGE':
+      return { ...state, language: action.payload };
     case 'CHEAT_UNLOCK':
       return { ...state, cheatsUnlocked: true };
     case 'RESET':
@@ -99,8 +104,10 @@ export function GameProvider({ children }) {
     // Cheat: todos desbloqueados
     if (state.cheatsUnlocked) return true;
 
-    const chapterIdx = chapters.findIndex(c => c.id === chapterId);
-    const chapter = chapters[chapterIdx];
+    const currentLanguageChapters = state.language === 'java' ? chaptersJava : state.language === 'csharp' ? chaptersCSharp : chaptersPython;
+
+    const chapterIdx = currentLanguageChapters.findIndex(c => c.id === chapterId);
+    const chapter = currentLanguageChapters[chapterIdx];
     if (!chapter) return false;
     const levelIdx = chapter.levels.findIndex(l => l.id === levelId);
     if (levelIdx === 0 && chapterIdx === 0) return true;
@@ -110,7 +117,7 @@ export function GameProvider({ children }) {
       return state.completedLevels.includes(`${chapterId}/${prevLevel.id}`);
     }
 
-    const prevChapter = chapters[chapterIdx - 1];
+    const prevChapter = currentLanguageChapters[chapterIdx - 1];
     const lastLevel = prevChapter.levels[prevChapter.levels.length - 1];
     return state.completedLevels.includes(`${prevChapter.id}/${lastLevel.id}`);
   };
@@ -135,6 +142,42 @@ export function GameProvider({ children }) {
     return 'Recluta';
   };
 
+  const chapters = useMemo(() => {
+    if (state.language === 'java') return chaptersJava;
+    if (state.language === 'csharp') return chaptersCSharp;
+    return chaptersPython;
+  }, [state.language]);
+
+  const getLevelById = (chapterId, levelId) => {
+    const chapter = chapters.find(c => c.id === chapterId);
+    if (!chapter) return null;
+    const level = chapter.levels.find(l => l.id === levelId);
+    return level ? { ...level, chapter } : null;
+  };
+
+  const getNextLevel = (chapterId, levelId) => {
+    const chapterIdx = chapters.findIndex(c => c.id === chapterId);
+    const chapter = chapters[chapterIdx];
+    if (!chapter) return null;
+
+    const levelIdx = chapter.levels.findIndex(l => l.id === levelId);
+
+    if (levelIdx < chapter.levels.length - 1) {
+      return { chapterId: chapter.id, levelId: chapter.levels[levelIdx + 1].id };
+    }
+
+    if (chapterIdx < chapters.length - 1) {
+      const nextChapter = chapters[chapterIdx + 1];
+      return { chapterId: nextChapter.id, levelId: nextChapter.levels[0].id };
+    }
+
+    return null;
+  };
+
+  const getTotalLevels = () => {
+    return chapters.reduce((acc, ch) => acc + ch.levels.length, 0);
+  };
+
   const value = {
     ...state,
     availableXp,
@@ -143,6 +186,10 @@ export function GameProvider({ children }) {
     isLevelCompleted,
     getLevelStars,
     getPlayerRank,
+    chapters,
+    getLevelById,
+    getNextLevel,
+    getTotalLevels,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

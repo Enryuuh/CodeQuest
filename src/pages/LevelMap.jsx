@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { chapters } from '../data/levels';
 import { Lock, Check, ChevronLeft, Zap, Award, Star } from 'lucide-react';
 
 const colorMap = {
@@ -13,7 +12,7 @@ const colorMap = {
 
 export default function LevelMap() {
   const navigate = useNavigate();
-  const { availableXp, isLevelUnlocked, isLevelCompleted, getLevelStars, getPlayerRank, username } = useGame();
+  const { availableXp, isLevelUnlocked, isLevelCompleted, getLevelStars, getPlayerRank, username, chapters } = useGame();
 
   return (
     <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto">

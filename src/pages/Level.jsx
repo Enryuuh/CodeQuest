@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { getLevelById, getNextLevel } from '../data/levels';
 import { runPython } from '../utils/pythonRunner';
+import { runJava } from '../utils/javaRunner';
+import { runCSharp } from '../utils/csharpRunner';
 import { ChevronLeft, Play, RotateCcw, Lightbulb, BookOpen, Zap, ArrowRight, Check, X, MessageSquare, Star } from 'lucide-react';
 import AriaAvatar from '../components/AriaAvatar';
 import { playTypewriterKey, playUserKey, playSuccess, playError } from '../utils/sounds';
@@ -12,7 +13,7 @@ const PHASES = ['story', 'lesson', 'challenge', 'decision', 'complete'];
 export default function Level() {
   const { chapterId, levelId } = useParams();
   const navigate = useNavigate();
-  const { isLevelCompleted, isLevelUnlocked, dispatch, decisions } = useGame();
+  const { isLevelCompleted, isLevelUnlocked, dispatch, decisions, getLevelById, getNextLevel, language } = useGame();
 
   const levelData = useMemo(() => getLevelById(chapterId, levelId), [chapterId, levelId]);
   const [phase, setPhase] = useState('story');
@@ -98,7 +99,14 @@ export default function Level() {
   };
 
   const handleRunCode = () => {
-    const result = runPython(code);
+    let result;
+    if (language === 'java') {
+      result = runJava(code);
+    } else if (language === 'csharp') {
+      result = runCSharp(code);
+    } else {
+      result = runPython(code);
+    }
     setOutput(result);
 
     const isValid = levelData.challenge.validation(code, result.output);

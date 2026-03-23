@@ -1,8 +1,12 @@
 import { useEffect, useRef } from 'react';
 
-const CHARS = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン{}[]<>=/\\|;:+-*&^%$#@!~';
+// Common matrix characters: Katakana, basic latin, numerals, and some symbols
+const KatakanaChars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポヴッン';
+const LatinChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const NumbersChars = '0123456789';
+const CHARS = KatakanaChars + LatinChars + NumbersChars;
 
-export default function MatrixRain({ opacity = 0.06 }) {
+export default function MatrixRain({ opacity = 0.5 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -19,44 +23,66 @@ export default function MatrixRain({ opacity = 0.06 }) {
     resize();
     window.addEventListener('resize', resize);
 
-    const fontSize = 14;
+    const fontSize = 16;
     let columns = Math.floor(canvas.width / fontSize);
-    let drops = Array(columns).fill(1).map(() => Math.random() * -50);
 
-    const draw = () => {
-      ctx.fillStyle = `rgba(13, 17, 23, 0.05)`;
+    // Initial Y positions of the drops
+    let drops = [];
+    for (let x = 0; x < columns; x++) {
+      drops[x] = Math.random() * -100; // Start offscreen randomly
+    }
+
+    let lastTime = 0;
+    const draw = (time) => {
+      animId = requestAnimationFrame(draw);
+
+      if (time - lastTime < 33) return; // ~30 fps
+      lastTime = time;
+
+      // Dark overlay with slight opacity creates the fading trail effect
+      ctx.fillStyle = `rgba(13, 17, 23, 0.15)`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = `rgba(57, 211, 83, ${opacity})`;
       ctx.font = `${fontSize}px monospace`;
+      
+      // Handle resize explicitly by adding missing columns
+      while (drops.length < Math.floor(canvas.width / fontSize)) {
+        drops.push(Math.random() * -100);
+      }
 
-      columns = Math.floor(canvas.width / fontSize);
-      while (drops.length < columns) drops.push(Math.random() * -50);
+      ctx.textAlign = 'left';
 
-      for (let i = 0; i < columns; i++) {
-        const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+      for (let i = 0; i < drops.length; i++) {
+        const text = CHARS[Math.floor(Math.random() * CHARS.length)];
         const x = i * fontSize;
         const y = drops[i] * fontSize;
 
-        // Brighter head
-        if (Math.random() > 0.95) {
-          ctx.fillStyle = `rgba(88, 166, 255, ${opacity * 2})`;
-          ctx.fillText(char, x, y);
-          ctx.fillStyle = `rgba(57, 211, 83, ${opacity})`;
+        // Draw character
+        ctx.fillStyle = `rgba(57, 211, 83, ${opacity})`;
+        
+        // Randomly make some characters white/brighter (the drop heads)
+        if (Math.random() > 0.9) {
+          ctx.fillStyle = `rgba(200, 255, 200, ${opacity * 1.5})`; 
+          ctx.shadowBlur = 5;
+          ctx.shadowColor = `rgba(57, 211, 83, ${opacity})`;
         } else {
-          ctx.fillText(char, x, y);
+          ctx.shadowBlur = 0;
         }
 
+        ctx.fillText(text, x, y);
+        ctx.shadowBlur = 0;
+
+        // Reset drop to top randomly when it hits bottom
         if (y > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
+
+        // Increment Y position
         drops[i]++;
       }
-
-      animId = requestAnimationFrame(draw);
     };
 
-    draw();
+    animId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animId);
@@ -67,7 +93,7 @@ export default function MatrixRain({ opacity = 0.06 }) {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0"
+      className="fixed inset-0 pointer-events-none -z-10"
       style={{ opacity: 1 }}
     />
   );

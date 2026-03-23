@@ -1,14 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import { chapters, getTotalLevels } from '../data/levels';
 import { Terminal, Zap, Trophy, RotateCcw, Award, User, BookOpen } from 'lucide-react';
 import AriaAvatar from '../components/AriaAvatar';
 import { playTypewriterKey } from '../utils/sounds';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { xp, completedLevels, getPlayerRank, dispatch, availableXp, claimedAchievements, username, cheatsUnlocked } = useGame();
+  const { xp, completedLevels, getPlayerRank, dispatch, availableXp, claimedAchievements, username, cheatsUnlocked, chapters, getTotalLevels, language } = useGame();
   const totalLevels = getTotalLevels();
   const progress = Math.round((completedLevels.length / totalLevels) * 100);
 
@@ -90,6 +89,31 @@ export default function Home() {
         Logros ({claimedAchievements.length}/22)
       </button>
 
+      {/* Selector de Lenguaje Rápido */}
+      <div className="mt-6 flex flex-col items-center animate-slide-up" style={{ animationDelay: '0.28s' }}>
+        <p className="text-xs text-terminal-muted mb-2">Especialidad Activa:</p>
+        <div className="flex bg-terminal-surface border border-terminal-border rounded-lg p-1">
+          <button
+            onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: 'python' })}
+            className={`px-4 py-1.5 rounded text-sm font-bold transition-colors cursor-pointer ${language === 'python' ? 'bg-neon-green/20 text-neon-green' : 'text-terminal-muted hover:text-terminal-text'}`}
+          >
+            Python
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: 'java' })}
+            className={`px-4 py-1.5 rounded text-sm font-bold transition-colors cursor-pointer ${language === 'java' ? 'bg-[#ff8c00]/20 text-[#ff8c00]' : 'text-terminal-muted hover:text-terminal-text'}`}
+          >
+            Java
+          </button>
+          <button
+            onClick={() => dispatch({ type: 'SET_LANGUAGE', payload: 'csharp' })}
+            className={`px-4 py-1.5 rounded text-sm font-bold transition-colors cursor-pointer ${language === 'csharp' ? 'bg-[#9b4dca]/20 text-[#9b4dca]' : 'text-terminal-muted hover:text-terminal-text'}`}
+          >
+            C#
+          </button>
+        </div>
+      </div>
+
       {/* Memoria */}
       {completedLevels.length > 0 && (
         <button
@@ -102,20 +126,18 @@ export default function Home() {
         </button>
       )}
 
-      {/* Reset */}
-      {completedLevels.length > 0 && (
-        <button
-          onClick={() => {
-            if (confirm('¿Reiniciar todo el progreso? Se borrará tu nombre y avance.')) {
-              dispatch({ type: 'RESET' });
-            }
-          }}
-          className="mt-4 flex items-center gap-2 text-terminal-muted hover:text-neon-red text-sm transition-colors cursor-pointer"
-        >
-          <RotateCcw className="w-3 h-3" />
-          Reiniciar progreso
-        </button>
-      )}
+      {/* Reset, siempre disponible para poder cambiar de usuario */}
+      <button
+        onClick={() => {
+          if (confirm('¿Reiniciar todo el progreso? Se borrará tu nombre y avance.')) {
+            dispatch({ type: 'RESET' });
+          }
+        }}
+        className="mt-4 flex items-center gap-2 text-terminal-muted hover:text-neon-red text-sm transition-colors cursor-pointer"
+      >
+        <RotateCcw className="w-3 h-3" />
+        Cambiar usuario / Reiniciar
+      </button>
 
       {/* Terminal interactivo con cheat code */}
       <CheatTerminal username={username} chapters={chapters} totalLevels={totalLevels} getPlayerRank={getPlayerRank} dispatch={dispatch} cheatsUnlocked={cheatsUnlocked} />
@@ -226,40 +248,77 @@ function CheatTerminal({ username, chapters, totalLevels, getPlayerRank, dispatc
 
 function UsernameScreen({ dispatch }) {
   const [name, setName] = useState('');
-  const [phase, setPhase] = useState('intro'); // 'intro' | 'input'
+  const [phase, setPhase] = useState('intro'); // 'intro' | 'input' | 'language'
   const [evaText, setEvaText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+  const inputRef = useRef(null);
 
   const introMessage = 'Bienvenido al sistema CORE. Soy EVA, la inteligencia artificial que te guiará en tu camino como programador. Antes de empezar... necesito saber cómo llamarte.';
 
   // Typewriter para EVA
-  useState(() => {
+  useEffect(() => {
     let i = 0;
+    
+    // If phase changed externally (via skip), clean up
+    if (phase !== 'intro') return;
+
     const timer = setInterval(() => {
       if (i < introMessage.length) {
         setEvaText(introMessage.slice(0, i + 1));
         if (i % 2 === 0 && introMessage[i] !== ' ') {
-          playTypewriterKey(0.07 + Math.random() * 0.05);
+          try {
+            playTypewriterKey(0.07 + Math.random() * 0.05);
+          } catch (e) {
+            // Ignore audio errors
+          }
         }
         i++;
       } else {
         setIsTyping(false);
-        setTimeout(() => setPhase('input'), 500);
+        setTimeout(() => {
+           setPhase(p => p === 'intro' ? 'input' : p);
+        }, 500);
         clearInterval(timer);
       }
-    }, 25);
+    }, 15); // Faster typewriter
+
     return () => clearInterval(timer);
-  });
+  }, [phase]);
+
+  // Reliable focus when input appears
+  useEffect(() => {
+    if (phase === 'input' && inputRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [phase]);
+
+  const skipIntro = () => {
+    if (phase === 'intro') {
+      setEvaText(introMessage);
+      setIsTyping(false);
+      setPhase('input');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const trimmed = name.trim();
     if (trimmed.length < 2) return;
-    dispatch({ type: 'SET_USERNAME', payload: trimmed });
+    setPhase('language');
+  };
+
+  const handleLanguageSelect = (lang) => {
+    dispatch({ type: 'SET_LANGUAGE', payload: lang });
+    dispatch({ type: 'SET_USERNAME', payload: name.trim() });
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6">
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center p-6"
+      onClick={skipIntro}
+    >
       {/* Logo */}
       <div className="text-center mb-10 animate-slide-up">
         <div className="inline-flex items-center gap-3 mb-2">
@@ -272,13 +331,13 @@ function UsernameScreen({ dispatch }) {
       </div>
 
       {/* EVA avatar */}
-      <div className="mb-6 flex flex-col items-center animate-fade-in">
+      <div className="mb-6 flex flex-col items-center animate-fade-in relative z-20">
         <AriaAvatar isSpeaking={isTyping} size={112} />
         <span className="text-neon-blue text-xs mt-2 font-bold tracking-widest">E.V.A.</span>
       </div>
 
       {/* Terminal de diálogo */}
-      <div className="w-full max-w-lg bg-terminal-surface border border-terminal-border rounded-lg p-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+      <div className="w-full max-w-lg bg-terminal-surface border border-terminal-border rounded-lg p-6 animate-slide-up relative z-20" style={{ animationDelay: '0.1s' }}>
         <div className="flex gap-1.5 mb-4">
           <div className="w-3 h-3 rounded-full bg-neon-red/70" />
           <div className="w-3 h-3 rounded-full bg-neon-yellow/70" />
@@ -304,13 +363,14 @@ function UsernameScreen({ dispatch }) {
               <div className="flex-1 relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-terminal-muted" />
                 <input
+                  ref={inputRef}
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Tu nombre..."
                   maxLength={20}
                   autoFocus
-                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg py-3 pl-10 pr-4 text-neon-green text-sm focus:outline-none focus:border-neon-green/50 placeholder:text-terminal-muted/30"
+                  className="w-full bg-terminal-bg border border-terminal-border rounded-lg py-3 pl-10 pr-4 text-neon-green text-sm focus:outline-none focus:border-neon-green/50 placeholder:text-terminal-muted/30 relative z-30"
                 />
               </div>
               <button
@@ -321,8 +381,40 @@ function UsernameScreen({ dispatch }) {
                 Entrar
               </button>
             </div>
-            <p className="text-xs text-terminal-muted/50 mt-2">Mínimo 2 caracteres. Tu progreso se guardará con este nombre.</p>
+            <p className="text-xs text-terminal-muted/50 mt-2">Mínimo 2 caracteres.</p>
           </form>
+        )}
+
+        {/* Selección de lenguaje */}
+        {phase === 'language' && (
+          <div className="animate-fade-in">
+            <label className="block text-xs text-terminal-muted mb-3 text-center">
+              <span className="text-neon-green">$</span> Selecciona tu especialidad base de datos:
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleLanguageSelect('python')}
+                className="flex flex-col items-center justify-center p-4 bg-terminal-bg border border-terminal-border rounded-lg hover:border-neon-green hover:bg-neon-green/10 transition-all cursor-pointer"
+              >
+                <div className="text-neon-green text-xl font-bold mb-1">Python</div>
+                <div className="text-[10px] text-terminal-muted text-center">Elegante, versátil y legible</div>
+              </button>
+              <button
+                onClick={() => handleLanguageSelect('java')}
+                className="flex flex-col items-center justify-center p-4 bg-terminal-bg border border-terminal-border rounded-lg hover:border-[#ff8c00] hover:bg-[#ff8c00]/10 transition-all cursor-pointer"
+              >
+                <div className="text-[#ff8c00] text-xl font-bold mb-1">Java</div>
+                <div className="text-[10px] text-terminal-muted text-center">Robusto, estricto y seguro</div>
+              </button>
+              <button
+                onClick={() => handleLanguageSelect('csharp')}
+                className="flex flex-col items-center justify-center p-4 bg-terminal-bg border border-terminal-border rounded-lg hover:border-[#9b4dca] hover:bg-[#9b4dca]/10 transition-all cursor-pointer"
+              >
+                <div className="text-[#9b4dca] text-xl font-bold mb-1">C#</div>
+                <div className="text-[10px] text-terminal-muted text-center">Moderno, poderoso y escalable</div>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
