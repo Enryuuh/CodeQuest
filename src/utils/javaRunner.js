@@ -1,20 +1,34 @@
 // Mini intérprete de Java simplificado para el juego
+const MAX_ITERATIONS = 100_000;
+
 export function runJava(code) {
   const output = [];
   const env = {};
 
   try {
     const jsCode = transpile(code);
+    let __inlineBuffer = '';
     const printFn = (...args) => {
-      output.push(args.map(a => javaRepr(a)).join(' '));
+      const line = __inlineBuffer + args.map(a => javaRepr(a)).join(' ');
+      output.push(line);
+      __inlineBuffer = '';
+    };
+    const printInline = (...args) => {
+      __inlineBuffer += args.map(a => javaRepr(a)).join(' ');
+    };
+
+    let __iterCount = 0;
+    const __tick = () => {
+      if (++__iterCount > MAX_ITERATIONS) throw new Error('Tiempo de ejecución agotado (loop infinito detectado)');
     };
 
     const builtins = {
-      printFn: printFn,
-      // Helper for array instantiation
-      Array: Array,
-      Math: Math,
-      String: String,
+      printFn,
+      printInline,
+      __tick,
+      Array,
+      Math,
+      String,
       Integer: { parseInt: (v) => parseInt(v, 10) },
       Double: { parseDouble: (v) => parseFloat(v) }
     };
@@ -43,22 +57,31 @@ function transpile(javaCode) {
 
   for (let i = 0; i < jsLines.length; i++) {
     let line = jsLines[i];
-    
-    // Convert print
+
+    // Convert print (println adds newline, print does not)
     line = line.replace(/System\.out\.println\(/g, 'printFn(');
-    
-    // Type definitions to 'let'
-    line = line.replace(/\b(int|double|float|String|boolean|char|long|short|byte)\b(?=\s+\w+\s*=)/g, 'let');
-    
+    line = line.replace(/System\.out\.print\(/g, 'printInline(');
+
+    // Type definitions to 'let' (with or without initializer)
+    line = line.replace(/\b(int|double|float|String|boolean|char|long|short|byte)\b(?=\s+\w+)/g, 'let');
+
     // Method Definitions
     line = line.replace(/\bvoid\s+(\w+)\s*\(/g, 'function $1(');
-    
+
     // Ignore classes / main method wrappings
     if (line.trim().startsWith('public class ') || line.trim().startsWith('class ')) {
       line = '{';
     }
     if (line.match(/public\s+static\s+void\s+main/)) {
       line = '{';
+    }
+
+    // Inject loop guard
+    if (line.match(/^\s*(for|while)\s*\(/) && !line.includes('__tick')) {
+      const closingBrace = line.lastIndexOf('{');
+      if (closingBrace !== -1) {
+        line = line.slice(0, closingBrace + 1) + ' __tick();' + line.slice(closingBrace + 1);
+      }
     }
 
     jsLines[i] = line;

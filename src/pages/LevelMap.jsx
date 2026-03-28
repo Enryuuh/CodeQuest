@@ -1,21 +1,42 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 import { Lock, Check, ChevronLeft, Zap, Award, Star } from 'lucide-react';
 
 const colorMap = {
-  'neon-green': { border: 'border-neon-green', text: 'text-neon-green', bg: 'bg-neon-green/10', glow: 'shadow-[0_0_15px_rgba(57,211,83,0.3)]' },
-  'neon-blue': { border: 'border-neon-blue', text: 'text-neon-blue', bg: 'bg-neon-blue/10', glow: 'shadow-[0_0_15px_rgba(88,166,255,0.3)]' },
-  'neon-purple': { border: 'border-neon-purple', text: 'text-neon-purple', bg: 'bg-neon-purple/10', glow: 'shadow-[0_0_15px_rgba(188,140,255,0.3)]' },
-  'neon-yellow': { border: 'border-neon-yellow', text: 'text-neon-yellow', bg: 'bg-neon-yellow/10', glow: 'shadow-[0_0_15px_rgba(227,179,65,0.3)]' },
-  'neon-orange': { border: 'border-neon-orange', text: 'text-neon-orange', bg: 'bg-neon-orange/10', glow: 'shadow-[0_0_15px_rgba(240,136,62,0.3)]' },
+  'neon-green': { border: 'border-neon-green', text: 'text-neon-green', bg: 'bg-neon-green/10', glow: 'shadow-[0_0_15px_rgba(57,211,83,0.3)]', progress: 'bg-neon-green' },
+  'neon-blue': { border: 'border-neon-blue', text: 'text-neon-blue', bg: 'bg-neon-blue/10', glow: 'shadow-[0_0_15px_rgba(88,166,255,0.3)]', progress: 'bg-neon-blue' },
+  'neon-purple': { border: 'border-neon-purple', text: 'text-neon-purple', bg: 'bg-neon-purple/10', glow: 'shadow-[0_0_15px_rgba(188,140,255,0.3)]', progress: 'bg-neon-purple' },
+  'neon-yellow': { border: 'border-neon-yellow', text: 'text-neon-yellow', bg: 'bg-neon-yellow/10', glow: 'shadow-[0_0_15px_rgba(227,179,65,0.3)]', progress: 'bg-neon-yellow' },
+  'neon-orange': { border: 'border-neon-orange', text: 'text-neon-orange', bg: 'bg-neon-orange/10', glow: 'shadow-[0_0_15px_rgba(240,136,62,0.3)]', progress: 'bg-neon-orange' },
 };
+
+const SCROLL_KEY = 'codequest_map_scroll';
 
 export default function LevelMap() {
   const navigate = useNavigate();
   const { availableXp, isLevelUnlocked, isLevelCompleted, getLevelStars, getPlayerRank, username, chapters } = useGame();
+  const containerRef = useRef(null);
+
+  // Restore scroll position
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SCROLL_KEY);
+    if (saved && containerRef.current) {
+      containerRef.current.scrollTop = parseInt(saved, 10);
+    }
+  }, []);
+
+  // Save scroll position on unmount
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onScroll = () => sessionStorage.setItem(SCROLL_KEY, el.scrollTop);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto">
+    <div ref={containerRef} className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <button
@@ -44,20 +65,38 @@ export default function LevelMap() {
       <div className="space-y-10">
         {chapters.map((chapter, chapterIdx) => {
           const colors = colorMap[chapter.color] || colorMap['neon-green'];
-          const chapterCompleted = chapter.levels.every(l => isLevelCompleted(chapter.id, l.id));
+          const completedCount = chapter.levels.filter(l => isLevelCompleted(chapter.id, l.id)).length;
+          const chapterCompleted = completedCount === chapter.levels.length;
           const firstLevelUnlocked = isLevelUnlocked(chapter.id, chapter.levels[0].id);
+          const chapterProgressPct = Math.round((completedCount / chapter.levels.length) * 100);
 
           return (
             <div key={chapter.id} className="animate-slide-up" style={{ animationDelay: `${chapterIdx * 0.1}s` }}>
               {/* Chapter header */}
-              <div className={`flex items-center gap-3 mb-4 ${firstLevelUnlocked ? colors.text : 'text-terminal-muted/50'}`}>
-                <span className="text-2xl">{chapter.icon}</span>
-                <div>
+              <div className={`flex items-start gap-3 mb-3 ${firstLevelUnlocked ? colors.text : 'text-terminal-muted/50'}`}>
+                <span className="text-2xl mt-0.5">{chapter.icon}</span>
+                <div className="flex-1">
                   <h2 className="text-lg font-bold">
                     Cap. {chapterIdx + 1}: {chapter.title}
                     {chapterCompleted && <Check className="w-4 h-4 inline ml-2 text-neon-green" />}
                   </h2>
                   <p className="text-xs text-terminal-muted">{chapter.description}</p>
+
+                  {/* Progress bar per chapter */}
+                  {firstLevelUnlocked && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-terminal-muted/70 mb-1">
+                        <span>{completedCount}/{chapter.levels.length} niveles</span>
+                        <span>{chapterProgressPct}%</span>
+                      </div>
+                      <div className="h-1 bg-terminal-border/40 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${colors.progress} rounded-full transition-all duration-700`}
+                          style={{ width: `${chapterProgressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

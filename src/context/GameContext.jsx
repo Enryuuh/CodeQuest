@@ -35,8 +35,8 @@ function loadState() {
 function reducer(state, action) {
   switch (action.type) {
     case 'COMPLETE_LEVEL': {
-      const { chapterId, levelId, xp, stars } = action.payload;
-      const key = `${chapterId}/${levelId}`;
+      const { chapterId, levelId, xp, stars, language } = action.payload;
+      const key = `${language}/${chapterId}/${levelId}`;
       const alreadyCompleted = state.completedLevels.includes(key);
       const prevStars = state.stars[key] || 0;
       const newStars = Math.max(prevStars, stars);
@@ -56,8 +56,8 @@ function reducer(state, action) {
         totalXpEarned: state.totalXpEarned + action.payload,
       };
     case 'MAKE_DECISION': {
-      const { chapterId, levelId, optionIndex } = action.payload;
-      const key = `${chapterId}/${levelId}`;
+      const { chapterId, levelId, optionIndex, language } = action.payload;
+      const key = `${language}/${chapterId}/${levelId}`;
       return {
         ...state,
         decisions: { ...state.decisions, [key]: optionIndex },
@@ -105,6 +105,7 @@ export function GameProvider({ children }) {
     if (state.cheatsUnlocked) return true;
 
     const currentLanguageChapters = state.language === 'java' ? chaptersJava : state.language === 'csharp' ? chaptersCSharp : chaptersPython;
+    const lang = state.language;
 
     const chapterIdx = currentLanguageChapters.findIndex(c => c.id === chapterId);
     const chapter = currentLanguageChapters[chapterIdx];
@@ -114,20 +115,20 @@ export function GameProvider({ children }) {
 
     if (levelIdx > 0) {
       const prevLevel = chapter.levels[levelIdx - 1];
-      return state.completedLevels.includes(`${chapterId}/${prevLevel.id}`);
+      return state.completedLevels.includes(`${lang}/${chapterId}/${prevLevel.id}`);
     }
 
     const prevChapter = currentLanguageChapters[chapterIdx - 1];
     const lastLevel = prevChapter.levels[prevChapter.levels.length - 1];
-    return state.completedLevels.includes(`${prevChapter.id}/${lastLevel.id}`);
+    return state.completedLevels.includes(`${lang}/${prevChapter.id}/${lastLevel.id}`);
   };
 
   const isLevelCompleted = (chapterId, levelId) => {
-    return state.completedLevels.includes(`${chapterId}/${levelId}`);
+    return state.completedLevels.includes(`${state.language}/${chapterId}/${levelId}`);
   };
 
   const getLevelStars = (chapterId, levelId) => {
-    return state.stars[`${chapterId}/${levelId}`] || 0;
+    return state.stars[`${state.language}/${chapterId}/${levelId}`] || 0;
   };
 
   const availableXp = state.xp - state.xpSpent;

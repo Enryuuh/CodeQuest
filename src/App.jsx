@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, useParams } from 'react-router-dom';
 import { GameProvider } from './context/GameContext';
 import Home from './pages/Home';
 import LevelMap from './pages/LevelMap';
@@ -6,6 +6,11 @@ import Level from './pages/Level';
 import Achievements from './pages/Achievements';
 import Memory from './pages/Memory';
 import MatrixRain from './components/MatrixRain';
+
+function LevelWithKey() {
+  const { chapterId, levelId } = useParams();
+  return <Level key={`${chapterId}/${levelId}`} />;
+}
 
 function App() {
   return (
@@ -16,7 +21,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/mapa" element={<LevelMap />} />
-            <Route path="/nivel/:chapterId/:levelId" element={<Level />} />
+            <Route path="/nivel/:chapterId/:levelId" element={<LevelWithKey />} />
             <Route path="/logros" element={<Achievements />} />
             <Route path="/memoria" element={<Memory />} />
           </Routes>

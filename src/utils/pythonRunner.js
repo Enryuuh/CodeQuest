@@ -1,6 +1,8 @@
 // Mini intérprete de Python simplificado para el juego
 // Soporta: print, variables, if/elif/else, for, while, funciones, listas, diccionarios, f-strings
 
+const MAX_ITERATIONS = 100_000;
+
 export function runPython(code) {
   const output = [];
   const env = {
@@ -13,8 +15,14 @@ export function runPython(code) {
       output.push(args.map(a => pythonRepr(a)).join(' '));
     };
 
+    let __iterCount = 0;
+    const __tick = () => {
+      if (++__iterCount > MAX_ITERATIONS) throw new Error('Tiempo de ejecución agotado (loop infinito detectado)');
+    };
+
     const builtins = {
       print: printFn,
+      __tick,
       len: (obj) => {
         if (typeof obj === 'string' || Array.isArray(obj)) return obj.length;
         if (typeof obj === 'object') return Object.keys(obj).length;
@@ -25,6 +33,7 @@ export function runPython(code) {
         if (args.length === 1) end = args[0];
         else if (args.length === 2) { start = args[0]; end = args[1]; }
         else { start = args[0]; end = args[1]; step = args[2]; }
+        if (step === 0) throw new Error('range() arg 3 must not be zero');
         const result = [];
         if (step > 0) for (let i = start; i < end; i += step) result.push(i);
         else for (let i = start; i > end; i += step) result.push(i);
@@ -48,7 +57,7 @@ export function runPython(code) {
         const f = Math.pow(10, d);
         return Math.round(n * f) / f;
       },
-      sorted: (arr) => [...arr].sort((a, b) => a - b),
+      sorted: (arr) => [...arr].sort((a, b) => typeof a === 'string' ? a.localeCompare(b) : a - b),
       type: (v) => {
         if (typeof v === 'string') return "<class 'str'>";
         if (typeof v === 'number') return Number.isInteger(v) ? "<class 'int'>" : "<class 'float'>";
@@ -153,19 +162,6 @@ function transpileLine(lines, lineIdx, expectedIndent) {
   // ** power operator
   processed = processed.replace(/(\w+)\s*\*\*\s*(\w+)/g, 'Math.pow($1, $2)');
 
-  // // integer division
-  processed = processed.replace(/([^/])\s*\/\/\s*/g, '$1 / ');
-  if (processed.includes(' / ') && trimmed.includes('//')) {
-    processed = `Math.floor(${processed.replace(/(.+)\s*\/\s*(.+)/, '$1 / $2')})`;
-    // Fix for assignments
-    if (processed.includes('=') && !processed.includes('==')) {
-      const eqIdx = processed.indexOf('=');
-      const lhs = processed.substring(0, eqIdx).replace('Math.floor(', '');
-      const rhs = processed.substring(eqIdx + 1);
-      processed = `${lhs}= Math.floor(${rhs})`;
-    }
-  }
-
   // for loop
   if (processed.startsWith('for ')) {
     const forMatch = trimmed.match(/^for\s+(\w+(?:\s*,\s*\w+)?)\s+in\s+(.+):\s*$/);
@@ -192,6 +188,7 @@ function transpileLine(lines, lineIdx, expectedIndent) {
         return {
           js: [
             `${indent}for (const [${k}, ${v}] of Object.entries(${iterProcessed})) {`,
+            `${indent}  __tick();`,
             ...bodyJs,
             `${indent}}`,
           ],
@@ -203,6 +200,7 @@ function transpileLine(lines, lineIdx, expectedIndent) {
       return {
         js: [
           `${indent}for (const ${vars} of ${iterProcessed}) {`,
+          `${indent}  __tick();`,
           ...bodyJs,
           `${indent}}`,
         ],
@@ -228,6 +226,7 @@ function transpileLine(lines, lineIdx, expectedIndent) {
       return {
         js: [
           `${indent}while (${cond}) {`,
+          `${indent}  __tick();`,
           ...bodyJs,
           `${indent}}`,
         ],
@@ -333,10 +332,10 @@ function transpileLine(lines, lineIdx, expectedIndent) {
 
       if (lhs.includes(',')) {
         const vars = lhs.split(/\s*,\s*/);
-        return { js: [`${indent}var [${vars.join(', ')}] = ${rhs};`], nextLine: lineIdx + 1 };
+        return { js: [`${indent}let [${vars.join(', ')}] = ${rhs};`], nextLine: lineIdx + 1 };
       }
 
-      return { js: [`${indent}var ${lhs} = ${rhs};`], nextLine: lineIdx + 1 };
+      return { js: [`${indent}let ${lhs} = ${rhs};`], nextLine: lineIdx + 1 };
     }
   }
 

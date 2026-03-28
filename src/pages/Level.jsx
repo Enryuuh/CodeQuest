@@ -4,18 +4,22 @@ import { useGame } from '../context/GameContext';
 import { runPython } from '../utils/pythonRunner';
 import { runJava } from '../utils/javaRunner';
 import { runCSharp } from '../utils/csharpRunner';
-import { ChevronLeft, Play, RotateCcw, Lightbulb, BookOpen, Zap, ArrowRight, Check, X, MessageSquare, Star } from 'lucide-react';
+import { ChevronLeft, Play, RotateCcw, Lightbulb, BookOpen, Zap, ArrowRight, Check, X, MessageSquare, Star, Volume2, VolumeX } from 'lucide-react';
 import AriaAvatar from '../components/AriaAvatar';
-import { playTypewriterKey, playUserKey, playSuccess, playError } from '../utils/sounds';
+import { playTypewriterKey, playUserKey, playSuccess, playError, startAmbient, stopAmbient, toggleMute, isMuted } from '../utils/sounds';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const PHASES = ['story', 'lesson', 'challenge', 'decision', 'complete'];
+
+const syntaxLang = { python: 'python', java: 'java', csharp: 'csharp' };
 
 export default function Level() {
   const { chapterId, levelId } = useParams();
   const navigate = useNavigate();
   const { isLevelCompleted, isLevelUnlocked, dispatch, decisions, getLevelById, getNextLevel, language } = useGame();
 
-  const levelData = useMemo(() => getLevelById(chapterId, levelId), [chapterId, levelId]);
+  const levelData = useMemo(() => getLevelById(chapterId, levelId), [chapterId, levelId, getLevelById]);
   const [phase, setPhase] = useState('story');
   const [storyIndex, setStoryIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
@@ -27,6 +31,7 @@ export default function Level() {
   const [selectedDecision, setSelectedDecision] = useState(null);
   const [bonusXp, setBonusXp] = useState(0);
   const [errors, setErrors] = useState(0);
+  const [muted, setMuted] = useState(isMuted());
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -34,6 +39,12 @@ export default function Level() {
       navigate('/mapa');
     }
   }, [levelData, chapterId, levelId]);
+
+  // Sonido ambiental al entrar al nivel
+  useEffect(() => {
+    startAmbient();
+    return () => stopAmbient();
+  }, []);
 
   // Typewriter effect
   useEffect(() => {
@@ -51,7 +62,6 @@ export default function Level() {
     const timer = setInterval(() => {
       if (i < text.length) {
         setDisplayedText(text.slice(0, i + 1));
-        // Sonido de typewriter suave (no en cada carácter para no saturar)
         if (i % 2 === 0 && text[i] !== ' ') {
           playTypewriterKey(0.08 + Math.random() * 0.06);
         }
@@ -84,6 +94,12 @@ export default function Level() {
   }, [code]);
 
   if (!levelData) return null;
+
+  const handleMuteToggle = () => {
+    const nowMuted = toggleMute();
+    setMuted(nowMuted);
+    if (!nowMuted) startAmbient();
+  };
 
   const handleStoryNext = () => {
     if (isTyping) {
@@ -131,7 +147,7 @@ export default function Level() {
     const option = levelData.decision.options[optionIndex];
     setSelectedDecision(optionIndex);
 
-    dispatch({ type: 'MAKE_DECISION', payload: { chapterId, levelId, optionIndex } });
+    dispatch({ type: 'MAKE_DECISION', payload: { chapterId, levelId, optionIndex, language } });
 
     const bonus = option.bonusXp || 0;
     setBonusXp(bonus);
@@ -146,14 +162,13 @@ export default function Level() {
     const stars = Math.max(1, 5 - errors);
     dispatch({
       type: 'COMPLETE_LEVEL',
-      payload: { chapterId, levelId, xp: levelData.xpReward + bonus, stars },
+      payload: { chapterId, levelId, xp: levelData.xpReward + bonus, stars, language },
     });
     setPhase('complete');
   };
 
   const handleKeyDown = (e) => {
-    // Sonido de teclado del usuario
-    if (!e.repeat && e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter' || e.key === 'Tab') {
+    if (!e.repeat && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter' || e.key === 'Tab')) {
       playUserKey(e.key === 'Enter' || e.key === ' ' ? 0.2 : 0.12 + Math.random() * 0.06);
     }
     if (e.key === 'Tab') {
@@ -178,6 +193,8 @@ export default function Level() {
     return '';
   };
 
+  const editorFilename = language === 'java' ? 'editor.java' : language === 'csharp' ? 'editor.cs' : 'editor.py';
+
   return (
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-6">
       {/* Header */}
@@ -189,8 +206,17 @@ export default function Level() {
           <div className="text-xs text-terminal-muted">{levelData.chapter.title}</div>
           <div className="text-sm font-bold text-terminal-text">{levelData.title}</div>
         </div>
-        <div className="flex items-center gap-1 text-neon-yellow text-sm">
-          <Zap className="w-4 h-4" /> {levelData.xpReward} XP
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleMuteToggle}
+            className="text-terminal-muted hover:text-neon-green transition-colors cursor-pointer"
+            title={muted ? 'Activar sonido' : 'Silenciar'}
+          >
+            {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+          <div className="flex items-center gap-1 text-neon-yellow text-sm">
+            <Zap className="w-4 h-4" /> {levelData.xpReward} XP
+          </div>
         </div>
       </div>
 
@@ -215,7 +241,6 @@ export default function Level() {
         {/* STORY PHASE */}
         {phase === 'story' && (
           <div className="flex flex-col items-center justify-center min-h-[50vh]">
-            {/* EVA Avatar — visible when mentor speaks */}
             {levelData.story[storyIndex]?.speaker === 'mentor' && (
               <div className="mb-6 flex flex-col items-center animate-fade-in">
                 <AriaAvatar isSpeaking={isTyping} size={96} />
@@ -224,14 +249,12 @@ export default function Level() {
             )}
 
             <div className="w-full max-w-2xl bg-terminal-surface border border-terminal-border rounded-lg p-6">
-              {/* Terminal header */}
               <div className="flex gap-1.5 mb-4">
                 <div className="w-3 h-3 rounded-full bg-neon-red/70" />
                 <div className="w-3 h-3 rounded-full bg-neon-yellow/70" />
                 <div className="w-3 h-3 rounded-full bg-neon-green/70" />
               </div>
 
-              {/* Previous messages */}
               <div className="space-y-3 mb-4">
                 {levelData.story.slice(0, storyIndex).map((msg, i) => (
                   <p key={i} className={`text-sm ${getSpeakerStyle(msg.speaker)} opacity-50`}>
@@ -242,7 +265,6 @@ export default function Level() {
                 ))}
               </div>
 
-              {/* Current message */}
               <div className="min-h-[60px]">
                 <p className={`text-sm ${getSpeakerStyle(levelData.story[storyIndex]?.speaker)}`}>
                   {levelData.story[storyIndex]?.speaker === 'mentor' && <span className="inline-block w-4 h-4 align-middle mr-1 rounded-full bg-neon-blue/30 border border-neon-blue/50 text-[8px] text-center leading-4">E</span>}
@@ -275,14 +297,25 @@ export default function Level() {
               </div>
             </div>
 
-            {/* Example */}
+            {/* Example with syntax highlighting */}
             <div className="bg-terminal-surface border border-terminal-border rounded-lg overflow-hidden mb-4">
               <div className="px-4 py-2 border-b border-terminal-border text-xs text-terminal-muted flex items-center gap-2">
                 <span className="text-neon-green">▶</span> Ejemplo
               </div>
-              <pre className="p-4 text-sm text-neon-green overflow-x-auto">
-                <code>{levelData.lesson.example}</code>
-              </pre>
+              <SyntaxHighlighter
+                language={syntaxLang[language] || 'python'}
+                style={vscDarkPlus}
+                customStyle={{
+                  margin: 0,
+                  padding: '1rem',
+                  background: 'transparent',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.5',
+                }}
+                codeTagProps={{ style: { fontFamily: 'JetBrains Mono, monospace' } }}
+              >
+                {levelData.lesson.example}
+              </SyntaxHighlighter>
               <div className="border-t border-terminal-border px-4 py-2">
                 <div className="text-xs text-terminal-muted mb-1">Salida:</div>
                 <pre className="text-sm text-neon-yellow">{levelData.lesson.exampleOutput}</pre>
@@ -329,7 +362,7 @@ export default function Level() {
                     <div className="w-3 h-3 rounded-full bg-neon-yellow/70" />
                     <div className="w-3 h-3 rounded-full bg-neon-green/70" />
                   </div>
-                  <span>editor.py</span>
+                  <span>{editorFilename}</span>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -415,9 +448,19 @@ export default function Level() {
                     {challengeResult === 'success' ? '¡Correcto!' : challengeResult === 'error' ? 'No es la respuesta esperada' : 'Salida:'}
                   </span>
                 </div>
-                <pre className="text-sm text-terminal-text whitespace-pre-wrap">{output.output}</pre>
+                {output.output && (
+                  <pre className="text-sm text-terminal-text whitespace-pre-wrap">{output.output}</pre>
+                )}
                 {output.error && (
-                  <pre className="text-sm text-neon-red mt-2 whitespace-pre-wrap">Error: {output.error}</pre>
+                  <div className="mt-2 p-2 bg-neon-red/5 border border-neon-red/20 rounded">
+                    <div className="text-xs text-neon-red/70 mb-1 font-bold">Error de ejecución:</div>
+                    <pre className="text-sm text-neon-red whitespace-pre-wrap">{output.error}</pre>
+                    {errors <= 2 && (
+                      <div className="mt-2 text-xs text-terminal-muted/70">
+                        💡 Revisa la sintaxis y prueba con el botón de Pista si necesitas ayuda.
+                      </div>
+                    )}
+                  </div>
                 )}
                 {challengeResult === 'success' && (
                   <div className="mt-3 text-sm text-neon-green animate-slide-up">
@@ -476,7 +519,6 @@ export default function Level() {
               <div className="text-6xl mb-4">🎉</div>
               <h2 className="text-2xl font-bold text-neon-green mb-2">¡Nivel Completado!</h2>
               <p className="text-terminal-muted">{levelData.title}</p>
-              {/* Stars display */}
               <div className="flex justify-center gap-1 mt-3">
                 {[1,2,3,4,5].map(i => (
                   <Star key={i} className={`w-6 h-6 ${i <= earnedStars ? 'text-neon-yellow fill-neon-yellow' : 'text-terminal-border'}`} />

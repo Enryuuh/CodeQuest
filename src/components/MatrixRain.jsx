@@ -45,9 +45,13 @@ export default function MatrixRain({ opacity = 0.5 }) {
 
       ctx.font = `${fontSize}px monospace`;
       
-      // Handle resize explicitly by adding missing columns
-      while (drops.length < Math.floor(canvas.width / fontSize)) {
+      // Handle resize: sync drops array length with current column count
+      const currentColumns = Math.floor(canvas.width / fontSize);
+      while (drops.length < currentColumns) {
         drops.push(Math.random() * -100);
+      }
+      if (drops.length > currentColumns) {
+        drops.length = currentColumns;
       }
 
       ctx.textAlign = 'left';
